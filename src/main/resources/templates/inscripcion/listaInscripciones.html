@@ -1,0 +1,273 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Inscripciones</title>
+	<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+	<header th:replace="~{fragmento/fragmento :: main-header}"></header>
+	<main class="container flex-grow-1 my-4">
+		<div class="row justify-content-center">
+			<div class="col-md-12">
+				<div th:if="${msg != null and #strings.startsWith(msg, '⚠')}"
+					class="alert alert-danger alert-dismissible fade show" role="alert">
+					<i class="fas fa-exclamation-circle me-1"></i>
+					<span th:text="${msg}"></span>
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+				<div th:if="${msg != null and !#strings.startsWith(msg, '⚠')}"
+					class="alert alert-success alert-dismissible fade show" role="alert">
+					<i class="fas fa-check-circle me-1"></i>
+					<span th:text="${msg}"></span>
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+				<div class="card shadow-sm">
+					<div class="card-header-custom d-flex align-items-center justify-content-between">
+						<span><i class="fas fa-file-signature me-2"></i>Inscripciones</span>
+						<a sec:authorize="hasRole('ROLE_ADMIN')"
+						   th:href="@{/inscripcion/nuevo}" class="btn btn-light btn-sm">
+							<i class="fas fa-plus me-1"></i> Nueva
+						</a>
+					</div>
+					<div class="card-body">
+						<form th:action="@{/inscripcion/inscripciones}" method="get"
+							class="d-flex gap-2 mb-3 search-bar flex-wrap">
+							<select name="estatus" class="form-select form-select-sm" style="max-width:180px;">
+								<option value="">— Todos los estatus —</option>
+								<option value="PENDIENTE"  th:selected="${estatus == 'PENDIENTE'}">Pendiente</option>
+								<option value="APROBADA"   th:selected="${estatus == 'APROBADA'}">Aprobada</option>
+								<option value="RECHAZADA"  th:selected="${estatus == 'RECHAZADA'}">Rechazada</option>
+							</select>
+							<select name="idSemestre" class="form-select form-select-sm" style="max-width:200px;">
+								<option value="">— Todos los semestres —</option>
+								<option th:each="s : ${semestres}"
+									th:value="${s.id}"
+									th:text="${s.nombre}"
+									th:selected="${idSemestre == s.id}">
+								</option>
+							</select>
+							<button class="btn btn-sm btn-guardar"><i class="bi bi-search"></i> Buscar</button>
+							<a th:href="@{/inscripcion/inscripciones}" class="btn btn-sm btn-outline-secondary">Limpiar</a>
+						</form>
+						<div class="table-responsive">
+							<table class="table table-bordered table-hover mb-0">
+								<thead>
+									<tr>
+										<th>ID</th>
+										<th>Alumno</th>
+										<th>Actividad</th>
+										<th>Semestre</th>
+										<th>Fecha solicitud</th>
+										<th class="text-center">Estatus</th>
+										<th class="text-center">Horario PDF</th>
+										<th class="text-center">Operaciones</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:if="${#lists.isEmpty(inscripciones)}">
+										<td colspan="8" class="text-center text-muted py-3">No se encontraron inscripciones.</td>
+									</tr>
+									<tr th:each="inscripcion : ${inscripciones}">
+										<td th:text="${inscripcion.id}"></td>
+										<td th:text="${inscripcion.alumno.persona.nombre + ' ' + inscripcion.alumno.persona.apellido}"></td>
+										<td th:text="${inscripcion.actividad.nombre}"></td>
+										<td th:text="${inscripcion.actividad.semestre.nombre}"></td>
+										<td th:text="${inscripcion.fechaSolicitud}"></td>
+										<td class="text-center">
+											<span th:if="${inscripcion.estatusSolicitud == 'APROBADA'}"
+												class="badge text-bg-success">Aprobada</span>
+											<span th:if="${inscripcion.estatusSolicitud == 'PENDIENTE'}"
+												class="badge text-bg-warning text-dark">Pendiente</span>
+											<span th:if="${inscripcion.estatusSolicitud == 'RECHAZADA'}"
+												class="badge text-bg-danger">Rechazada</span>
+										</td>
+										<td class="text-center">
+											<a th:if="${inscripcion.archivoHorario != null}"
+												th:href="@{/uploads/inscripcion/{pdf}(pdf=${inscripcion.archivoHorario})}"
+												target="_blank" class="btn btn-sm btn-outline-secondary">
+												<i class="fas fa-file-pdf"></i>
+											</a>
+											<span th:unless="${inscripcion.archivoHorario != null}"
+												class="text-muted" style="font-size:12px;">—</span>
+										</td>
+										<td class="text-center">
+											<div class="d-flex justify-content-center align-items-center gap-1 flex-wrap">
+												<!-- CRUD -->
+												<div class="d-flex gap-1">
+													<a class="btn btn-ver btn-sm"
+														th:href="@{/inscripcion/ver/{id}(id=${inscripcion.id})}"
+														title="Ver detalle">
+														<i class="bi bi-eye"></i>
+													</a>
+													<a sec:authorize="hasRole('ROLE_ADMIN')" class="btn btn-editar btn-sm"
+														th:href="@{/inscripcion/editar/{id}(id=${inscripcion.id})}"
+														title="Editar">
+														<i class="bi bi-pencil"></i>
+													</a>
+													<button sec:authorize="hasRole('ROLE_ADMIN')" class="btn btn-eliminar btn-sm"
+														data-bs-toggle="modal" data-bs-target="#modalEliminar"
+														th:attr="data-id=${inscripcion.id}, data-nombre=${inscripcion.alumno.persona.nombre + ' ' + inscripcion.alumno.persona.apellido}"
+														onclick="prepararEliminar(this)"
+														title="Eliminar">
+														<i class="bi bi-trash"></i>
+													</button>
+												</div>
+												<!-- Aprobar/Rechazar: ADMIN y ENCARGADO, solo cuando PENDIENTE -->
+												<div th:if="${inscripcion.estatusSolicitud == 'PENDIENTE'}"
+													sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')"
+													class="d-flex gap-1 border-start ps-1 ms-1">
+													<button class="btn btn-sm" style="background:#22B14C;color:#fff;"
+														data-bs-toggle="modal" data-bs-target="#modalAprobar"
+														th:attr="data-id=${inscripcion.id}, data-nombre=${inscripcion.alumno.persona.nombre + ' ' + inscripcion.alumno.persona.apellido}"
+														onclick="prepararAprobar(this)"
+														title="Aprobar">
+														<i class="bi bi-check-lg"></i>
+													</button>
+													<button class="btn btn-sm btn-warning"
+														data-bs-toggle="modal" data-bs-target="#modalRechazar"
+														th:attr="data-id=${inscripcion.id}, data-nombre=${inscripcion.alumno.persona.nombre + ' ' + inscripcion.alumno.persona.apellido}"
+														onclick="prepararRechazar(this)"
+														title="Rechazar">
+														<i class="bi bi-x-lg"></i>
+													</button>
+												</div>
+											</div>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Modal aprobar -->
+		<div class="modal fade" id="modalAprobar" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">
+							<i class="fas fa-check-circle text-success me-2"></i>
+							Confirmar aprobación
+						</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body" style="font-size:14px;">
+						¿Aprobar la inscripción de <strong id="nombreAprobar"></strong>?
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+							<i class="fas fa-times me-1"></i> Cancelar
+						</button>
+						<a id="btnConfirmarAprobar" href="#" class="btn btn-success">
+							<i class="fas fa-check me-1"></i> Sí, aprobar
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Modal rechazar -->
+		<div class="modal fade" id="modalRechazar" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">
+							<i class="fas fa-times-circle text-warning me-2"></i>
+							Rechazar inscripción
+						</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body">
+						<p style="font-size:14px;">Alumno: <strong id="nombreRechazar"></strong></p>
+						<label class="form-label">Motivo de rechazo <span class="text-danger">*</span></label>
+						<textarea class="form-control" id="motivoRechazoInput" rows="3"
+							placeholder="Indique el motivo..." required></textarea>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+							<i class="fas fa-times me-1"></i> Cancelar
+						</button>
+						<a id="btnConfirmarRechazar" href="#" class="btn btn-warning"
+							onclick="return confirmarRechazo()">
+							<i class="fas fa-ban me-1"></i> Rechazar
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Modal eliminar -->
+		<div class="modal fade" id="modalEliminar" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">
+							<i class="fas fa-exclamation-triangle text-warning me-2"></i>
+							Confirmar eliminación
+						</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body" style="font-size:14px;">
+						¿Eliminar la inscripción de <strong id="nombreEliminar"></strong>?
+						<br>
+						<span style="font-size:12px;color:var(--tecnm-gris);">Esta acción no se puede deshacer.</span>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+							<i class="fas fa-times me-1"></i> Cancelar
+						</button>
+						<a id="btnConfirmarEliminar" href="#" class="btn btn-eliminar">
+							<i class="fas fa-trash me-1"></i> Sí, eliminar
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			function prepararAprobar(btn) {
+				const id = btn.getAttribute('data-id');
+				const nombre = btn.getAttribute('data-nombre');
+				document.getElementById('nombreAprobar').textContent = nombre;
+				document.getElementById('btnConfirmarAprobar').href = '/inscripcion/aprobar/' + id;
+			}
+			function prepararRechazar(btn) {
+				const id = btn.getAttribute('data-id');
+				const nombre = btn.getAttribute('data-nombre');
+				document.getElementById('nombreRechazar').textContent = nombre;
+				document.getElementById('motivoRechazoInput').value = '';
+				document.getElementById('btnConfirmarRechazar').dataset.id = id;
+			}
+			function confirmarRechazo() {
+				const motivo = document.getElementById('motivoRechazoInput').value.trim();
+				if (!motivo) {
+					document.getElementById('motivoRechazoInput').focus();
+					return false;
+				}
+				const id = document.getElementById('btnConfirmarRechazar').dataset.id;
+				document.getElementById('btnConfirmarRechazar').href =
+					'/inscripcion/rechazar/' + id + '?motivoRechazo=' + encodeURIComponent(motivo);
+				return true;
+			}
+			function prepararEliminar(btn) {
+				const id = btn.getAttribute('data-id');
+				const nombre = btn.getAttribute('data-nombre');
+				document.getElementById('nombreEliminar').textContent = nombre;
+				document.getElementById('btnConfirmarEliminar').href = '/inscripcion/eliminar/' + id;
+			}
+		</script>
+	</main>
+	<footer th:replace="~{fragmento/fragmento :: footer}"></footer>
+	<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

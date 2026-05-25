@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Editar Asistencia</title>
+	<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+	<header th:replace="~{fragmento/fragmento :: main-header}"></header>
+	<main class="container flex-grow-1 my-4">
+		<div class="row justify-content-center">
+			<div class="col-md-6">
+				<div class="card shadow-sm">
+					<div class="card-header-custom">
+						<i class="fas fa-user-check me-2"></i>Corregir registro de asistencia
+					</div>
+					<div class="card-body p-4">
+
+						<!-- Información de solo lectura -->
+						<div class="mb-3">
+							<label class="form-label text-muted" style="font-size:12px;">ACTIVIDAD</label>
+							<input type="text" class="form-control form-control-sm" readonly
+								style="background:#f4f6f8;"
+								th:value="${asistencia.sesion.horario.actividad.nombre}">
+						</div>
+						<div class="row g-3 mb-3">
+							<div class="col-sm-6">
+								<label class="form-label text-muted" style="font-size:12px;">SESIÓN</label>
+								<input type="text" class="form-control form-control-sm" readonly
+									style="background:#f4f6f8;"
+									th:value="${'#' + asistencia.sesion.numeroSesion + '  —  ' + asistencia.sesion.fecha}">
+							</div>
+							<div class="col-sm-6">
+								<label class="form-label text-muted" style="font-size:12px;">ALUMNO</label>
+								<input type="text" class="form-control form-control-sm" readonly
+									style="background:#f4f6f8;"
+									th:value="${asistencia.alumno.persona.nombre + ' ' + asistencia.alumno.persona.apellido + '  (' + asistencia.alumno.numControl + ')'}">
+							</div>
+						</div>
+
+						<hr class="my-3">
+
+						<!-- Campos editables -->
+						<form th:action="@{/asistencia/guardar}" method="post">
+							<input type="hidden" name="id" th:value="${asistencia.id}">
+
+							<div class="mb-3">
+								<div class="form-check form-switch">
+									<input class="form-check-input" type="checkbox"
+										name="asistio" id="checkAsistio" value="true"
+										th:checked="${asistencia.asistio}">
+									<label class="form-check-label" for="checkAsistio">
+										<strong>Asistió a la sesión</strong>
+									</label>
+								</div>
+								<div class="form-text text-muted" style="font-size:11px;">
+									Activa si el alumno estuvo presente; desactiva si no asistió.
+								</div>
+							</div>
+
+							<div class="mb-4">
+								<label class="form-label">
+									Observaciones <small class="text-muted">(opcional)</small>
+								</label>
+								<textarea class="form-control" name="observaciones" rows="3"
+									placeholder="Ej. Llegó tarde, salió antes..."
+									th:text="${asistencia.observaciones}"></textarea>
+							</div>
+
+							<div class="d-flex gap-2">
+								<button type="submit" class="btn btn-guardar">
+									<i class="fas fa-save me-1"></i> Guardar cambios
+								</button>
+								<a th:href="@{/asistencia/asistencias}" class="btn btn-outline-secondary">
+									<i class="fas fa-times me-1"></i> Cancelar
+								</a>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</main>
+	<footer th:replace="~{fragmento/fragmento :: footer}"></footer>
+	<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Mi panel — Alumno</title>
+	<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<link rel="stylesheet" th:href="@{/css/estilos.css}">
+	<style>
+		.metric-card {
+			background: #fff;
+			border: 1px solid #d6dce8;
+			border-radius: 10px;
+			padding: 1rem;
+		}
+
+		.metric-label {
+			font-size: 11px;
+			color: var(--tecnm-gris);
+			margin-bottom: 4px;
+			text-transform: uppercase;
+			letter-spacing: .4px;
+		}
+
+		.metric-value {
+			font-size: 28px;
+			font-weight: 700;
+			color: var(--tecnm-azul);
+		}
+
+		.metric-sub {
+			font-size: 12px;
+			color: var(--tecnm-gris);
+			font-weight: 400;
+		}
+	</style>
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+	<header th:replace="~{fragmento/fragmento :: main-header}"></header>
+	<main class="container flex-grow-1 my-4">
+
+		<!-- Métricas -->
+		<div class="row g-3 mb-4">
+			<div class="col-md-4">
+				<div class="metric-card shadow-sm">
+					<div class="metric-label">Créditos acumulados</div>
+					<div class="metric-value" th:text="${creditos}">0</div>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="metric-card shadow-sm">
+					<div class="metric-label">Actividad actual</div>
+					<div class="metric-value" style="font-size:16px;margin-top:6px;">
+						<span th:if="${inscripciones != null and !inscripciones.isEmpty()}"
+							th:text="${inscripciones[0].actividad.nombre}">—</span>
+						<span th:if="${inscripciones == null or inscripciones.isEmpty()}"
+							style="font-size:14px;color:var(--tecnm-gris);">Sin actividad</span>
+					</div>
+				</div>
+			</div>
+			<div class="col-md-4">
+				<div class="metric-card shadow-sm">
+					<div class="metric-label">Estado</div>
+					<div style="margin-top:10px;">
+						<th:block th:if="${inscripciones != null and !inscripciones.isEmpty()}">
+							<span th:if="${inscripciones[0].estatusSolicitud == 'APROBADA'}"
+								class="badge text-bg-success fs-6">Inscrito</span>
+							<span th:if="${inscripciones[0].estatusSolicitud == 'PENDIENTE'}"
+								class="badge text-bg-warning fs-6">Pendiente</span>
+							<span th:if="${inscripciones[0].estatusSolicitud == 'RECHAZADA'}"
+								class="badge text-bg-danger fs-6">Rechazada</span>
+						</th:block>
+						<span th:if="${inscripciones == null or inscripciones.isEmpty()}"
+							class="badge text-bg-secondary fs-6">Sin inscripción</span>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Mis actividades -->
+		<div class="card shadow-sm">
+			<div class="card-header-custom d-flex align-items-center justify-content-between">
+				<span><i class="fas fa-list me-2"></i>Mis actividades</span>
+			</div>
+			<div class="card-body">
+				<div th:if="${inscripciones == null or inscripciones.isEmpty()}" class="text-center py-4"
+					style="color:var(--tecnm-gris);">
+					<i class="fas fa-inbox fa-2x mb-2"></i>
+					<p>No tienes inscripciones registradas.</p>
+				</div>
+				<div class="table-responsive" th:unless="${inscripciones == null or inscripciones.isEmpty()}">
+					<table class="table table-bordered table-hover mb-0">
+						<thead>
+							<tr>
+								<th>Actividad</th>
+								<th>Horario</th>
+								<th class="text-center">Créditos</th>
+								<th class="text-center">Estado</th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr th:each="ins : ${inscripciones}">
+								<td th:text="${ins.actividad.nombre}"></td>
+								<td>
+									<span th:if="${ins.actividad != null}"
+										style="font-size:12px;color:var(--tecnm-gris);">
+										Ver en catálogo
+									</span>
+								</td>
+								<td class="text-center" th:text="${ins.actividad.disciplina.creditos}"></td>
+								<td class="text-center">
+									<span th:if="${ins.estatusSolicitud == 'APROBADA'}"
+										class="badge text-bg-success">Inscrito</span>
+									<span th:if="${ins.estatusSolicitud == 'PENDIENTE'}"
+										class="badge text-bg-warning">Pendiente</span>
+									<span th:if="${ins.estatusSolicitud == 'RECHAZADA'}"
+										class="badge text-bg-danger">Rechazada</span>
+								</td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+			<div class="p-3 border-top d-flex gap-2">
+				<a th:href="@{/}" class="btn btn-guardar btn-sm">
+					<i class="fas fa-search me-1"></i> Ver catálogo
+				</a>
+				<a th:href="@{/constancia/constancias}" class="btn btn-outline-secondary btn-sm">
+					<i class="fas fa-certificate me-1"></i> Mis constancias
+				</a>
+			</div>
+		</div>
+
+	</main>
+	<footer th:replace="~{fragmento/fragmento :: footer}"></footer>
+	<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Formulario Constancia</title>
+	<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+	<header th:replace="~{fragmento/fragmento :: main-header}"></header>
+	<main class="container flex-grow-1 my-4">
+		<div class="row justify-content-center">
+			<div class="col-md-7">
+
+				<div th:if="${msg != null and #strings.startsWith(msg, '⚠')}"
+					class="alert alert-danger alert-dismissible fade show" role="alert">
+					<i class="fas fa-exclamation-circle me-1"></i>
+					<span th:text="${msg}"></span>
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+				<div th:if="${msg != null and !#strings.startsWith(msg, '⚠')}"
+					class="alert alert-success alert-dismissible fade show" role="alert">
+					<i class="fas fa-check-circle me-1"></i>
+					<span th:text="${msg}"></span>
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+
+				<div class="card shadow-sm">
+					<div class="card-header-custom">
+						<i class="fas fa-certificate me-2"></i>
+						<span th:text="${constancia.id != null} ? 'Editar constancia' : 'Generar constancia'"></span>
+					</div>
+					<div class="card-body p-4">
+						<form th:action="@{/constancia/guardar}" method="post"
+							th:object="${constancia}">
+							<input type="hidden" th:field="*{id}">
+
+							<!-- INSCRIPCIÓN -->
+							<div class="mb-3">
+								<label class="form-label">Inscripción (alumno — actividad)
+									<span class="text-danger">*</span>
+								</label>
+								<!-- NUEVO: autocomplete -->
+								<div th:if="${constancia.id == null}" class="position-relative">
+									<input type="text" id="inputInscripcion" class="form-control form-control-sm"
+										placeholder="Escriba nombre del alumno o actividad..."
+										autocomplete="off">
+									<ul id="sugerenciasInscripcion"
+										class="list-group position-absolute w-100 shadow-sm"
+										style="z-index:1000;max-height:220px;overflow-y:auto;display:none;top:100%;left:0;font-size:13px;"></ul>
+								</div>
+								<input th:if="${constancia.id == null}"
+									type="hidden" name="inscripcion.id" id="inscripcionIdHidden">
+								<div id="inscripcionError" th:if="${constancia.id == null}"
+									class="form-text text-danger d-none">
+									<i class="bi bi-exclamation-circle me-1"></i>Selecciona una inscripción de la lista.
+								</div>
+								<!-- EDICIÓN: solo lectura -->
+								<div th:if="${constancia.id != null}">
+									<input type="hidden" name="inscripcion.id"
+										th:value="${constancia.inscripcion.id}">
+									<input type="text" class="form-control form-control-sm" readonly
+										style="background:#f4f6f8;"
+										th:value="${constancia.inscripcion.alumno.persona.nombre + ' ' + constancia.inscripcion.alumno.persona.apellido + ' — ' + constancia.inscripcion.actividad.nombre}">
+								</div>
+							</div>
+
+							<!-- DATOS AUTO-DERIVADOS -->
+							<div class="row g-3 mb-3">
+								<div class="col-md-6">
+									<label class="form-label">Valor numérico (0–100)</label>
+									<input type="text" id="valorNumericoDisplay" class="form-control form-control-sm"
+										readonly style="background:#f4f6f8;"
+										placeholder="Se asigna al seleccionar..."
+										th:value="${constancia.id != null ? constancia.valorNumerico : ''}">
+									<div class="form-text text-muted" style="font-size:11px;">Derivado de la evaluación.</div>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Nivel de desempeño</label>
+									<input type="text" id="nivelDisplay" class="form-control form-control-sm"
+										readonly style="background:#f4f6f8;"
+										placeholder="Se asigna al seleccionar..."
+										th:value="${constancia.id != null and constancia.nivel != null ? constancia.nivel.nombre : ''}">
+									<div class="form-text text-muted" style="font-size:11px;">Derivado de la evaluación.</div>
+								</div>
+								<div class="col-md-8">
+									<label class="form-label">Semestre</label>
+									<input type="text" id="semestreDisplay" class="form-control form-control-sm"
+										readonly style="background:#f4f6f8;"
+										placeholder="Se asigna al seleccionar..."
+										th:value="${constancia.id != null and constancia.semestre != null ? constancia.semestre.nombre : ''}">
+									<div class="form-text text-muted" style="font-size:11px;">Derivado de la actividad.</div>
+								</div>
+								<div class="col-md-4">
+									<label class="form-label">Val. curricular (créditos)</label>
+									<input type="number" id="valorCurricularInput" class="form-control form-control-sm"
+										name="valorCurricular" readonly style="background:#f4f6f8;"
+										placeholder="Auto..."
+										th:value="${constancia.valorCurricular}">
+									<div class="form-text text-muted" style="font-size:11px;">Según disciplina.</div>
+								</div>
+							</div>
+
+							<!-- ESTATUS (solo en edición) -->
+							<div th:if="${constancia.id != null}" class="mb-3">
+								<label class="form-label">Estatus</label>
+								<select class="form-select form-select-sm" name="estatus">
+									<option value="GENERADA"  th:selected="${constancia.estatus == 'GENERADA'}">Generada</option>
+									<option value="ENTREGADA" th:selected="${constancia.estatus == 'ENTREGADA'}">Entregada</option>
+								</select>
+							</div>
+
+							<div class="d-flex gap-2">
+								<button type="submit" class="btn btn-guardar" id="btnGuardar">
+									<i class="fas fa-save me-1"></i> Guardar
+								</button>
+								<a th:href="@{/constancia/constancias}" class="btn btn-outline-secondary">
+									<i class="fas fa-times me-1"></i> Cancelar
+								</a>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</main>
+	<footer th:replace="~{fragmento/fragmento :: footer}"></footer>
+	<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+
+		var inscripcionesArr = [];
+		/*[# th:each="d : ${inscripcionesData}"]*/
+		inscripcionesArr.push({
+			id:             String(/*[[${d.inscripcion.id}]]*/ 0),
+			texto:          /*[[${d.inscripcion.alumno.persona.nombre + ' ' + d.inscripcion.alumno.persona.apellido + ' — ' + d.inscripcion.actividad.nombre}]]*/ '',
+			valorNumerico:  /*[[${d.evaluacion.valorNumerico}]]*/ '',
+			nivelNombre:    /*[[${d.evaluacion.nivel != null ? d.evaluacion.nivel.nombre : '—'}]]*/ '—',
+			semestreNombre: /*[[${d.inscripcion.actividad.semestre != null ? d.inscripcion.actividad.semestre.nombre : '—'}]]*/ '—',
+			creditos:       /*[[${d.inscripcion.actividad.disciplina != null ? d.inscripcion.actividad.disciplina.creditos : ''}]]*/ ''
+		});
+		/*[/]*/
+
+		(function () {
+			var input   = document.getElementById('inputInscripcion');
+			var lista   = document.getElementById('sugerenciasInscripcion');
+			var hidden  = document.getElementById('inscripcionIdHidden');
+			var error   = document.getElementById('inscripcionError');
+			var valNum  = document.getElementById('valorNumericoDisplay');
+			var nivel   = document.getElementById('nivelDisplay');
+			var sem     = document.getElementById('semestreDisplay');
+			var creditos = document.getElementById('valorCurricularInput');
+			if (!input) return;
+
+			input.addEventListener('input', function () {
+				var q = this.value.toLowerCase().trim();
+				hidden.value = '';
+				if (valNum)   valNum.value   = '';
+				if (nivel)    nivel.value    = '';
+				if (sem)      sem.value      = '';
+				if (creditos) creditos.value = '';
+				if (error) error.classList.add('d-none');
+
+				if (q.length < 1) { lista.style.display = 'none'; return; }
+
+				var coincidentes = inscripcionesArr.filter(function (i) {
+					return i.texto.toLowerCase().includes(q);
+				}).slice(0, 10);
+
+				lista.innerHTML = '';
+				if (!coincidentes.length) { lista.style.display = 'none'; return; }
+
+				coincidentes.forEach(function (i) {
+					var li = document.createElement('li');
+					li.className = 'list-group-item list-group-item-action py-1 px-2';
+					li.style.cursor = 'pointer';
+					li.textContent = i.texto;
+					li.addEventListener('mousedown', function () {
+						input.value  = i.texto;
+						hidden.value = i.id;
+						if (valNum)   valNum.value   = i.valorNumerico;
+						if (nivel)    nivel.value    = i.nivelNombre;
+						if (sem)      sem.value      = i.semestreNombre;
+						if (creditos) creditos.value = i.creditos;
+						lista.style.display = 'none';
+						if (error) error.classList.add('d-none');
+					});
+					lista.appendChild(li);
+				});
+				lista.style.display = 'block';
+			});
+
+			input.addEventListener('blur', function () {
+				setTimeout(function () { lista.style.display = 'none'; }, 150);
+			});
+		})();
+
+		document.querySelector('form').addEventListener('submit', function (e) {
+			var hiddenInsc = document.getElementById('inscripcionIdHidden');
+			var error      = document.getElementById('inscripcionError');
+			if (hiddenInsc && !hiddenInsc.value) {
+				e.preventDefault();
+				if (error) error.classList.remove('d-none');
+				document.getElementById('inputInscripcion').focus();
+			}
+		});
+		/*]]>*/
+	</script>
+</body>
+
+</html>

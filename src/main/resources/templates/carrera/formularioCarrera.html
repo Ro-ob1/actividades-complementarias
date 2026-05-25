@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Formulario Carrera</title>
+	<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+	<header th:replace="~{fragmento/fragmento :: main-header}"></header>
+	<main class="container flex-grow-1 my-4">
+		<div class="row justify-content-center">
+			<div class="col-md-6">
+				<div class="card shadow-sm">
+					<div class="card-header-custom">
+						<i class="fas fa-graduation-cap me-2"></i>
+						<span th:text="${carrera.id != null} ? 'Editar carrera' : 'Registrar carrera'"></span>
+					</div>
+					<div class="card-body p-4">
+						<form th:action="@{/carrera/guardar}" method="post" th:object="${carrera}">
+							<input type="hidden" th:field="*{id}">
+
+							<div th:if="${carrera.id != null}" class="mb-3">
+								<label class="form-label">ID</label>
+								<input type="text" class="form-control" th:value="${carrera.id}" readonly>
+							</div>
+							<div class="mb-3">
+							    <label class="form-label">Clave <span class="text-danger">*</span></label>
+								<input type="text" class="form-control" th:field="*{clave}"
+								       placeholder="Ej. ISC"
+								       required
+								       minlength="2"
+								       maxlength="10"
+								       pattern="[A-Za-z]+"
+								       title="Solo letras, sin números ni espacios"
+								       style="text-transform:uppercase;"
+								       oninput="this.value = this.value.toUpperCase()">
+							    <div class="form-text text-muted" style="font-size:11px;">
+							        Solo letras, sin espacios ni números. Ej: ISC, IIN
+							    </div>
+							</div>
+							<div class="mb-3">
+							    <label class="form-label">Nombre <span class="text-danger">*</span></label>
+								<input type="text" class="form-control" th:field="*{nombre}"
+								       placeholder="Ej. Ingeniería en Sistemas Computacionales"
+								       required
+								       minlength="3"
+								       maxlength="100"
+								       pattern="[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+"
+								       title="Solo letras y espacios"
+								       style="text-transform:capitalize;"
+								       oninput="this.value = capitalizarPalabras(this.value)">
+							</div>
+							<div class="d-flex gap-2">
+								<button type="submit" class="btn btn-guardar"><i class="fas fa-save me-1"></i>
+									Guardar</button>
+								<a th:href="@{/carrera/carreras}" class="btn btn-outline-secondary"><i
+										class="fas fa-times me-1"></i> Cancelar</a>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</main>
+	<footer th:replace="~{fragmento/fragmento :: footer}"></footer>
+	<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js">
+		function capitalizarPalabras(texto) {
+		    return texto.replace(/\b\w/g, c => c.toUpperCase());
+		}
+	</script>
+</body>
+
+</html>

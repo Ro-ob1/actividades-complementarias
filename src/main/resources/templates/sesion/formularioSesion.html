@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Formulario Sesión</title>
+	<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+	<header th:replace="~{fragmento/fragmento :: main-header}"></header>
+	<main class="container flex-grow-1 my-4">
+		<div class="row justify-content-center">
+			<div class="col-md-6">
+				<div class="card shadow-sm">
+					<div class="card-header-custom">
+						<i class="fas fa-calendar-day me-2"></i>
+						<span th:text="${sesion.id != null} ? 'Editar sesión' : 'Registrar sesión'"></span>
+					</div>
+					<div class="card-body p-4">
+						<form th:action="@{/sesion/guardar}" method="post" th:object="${sesion}">
+							<input type="hidden" th:field="*{id}">
+
+							<div th:if="${sesion.id != null}" class="mb-3">
+								<label class="form-label">ID</label>
+								<input type="text" class="form-control" th:value="${sesion.id}" readonly>
+							</div>
+
+							<div class="mb-3">
+								<label class="form-label">Horario <span class="text-danger">*</span></label>
+								<select class="form-select" name="horario.id" required>
+									<option value="">— Seleccione —</option>
+									<option th:each="h : ${horarios}"
+										th:value="${h.id}"
+										th:text="${h.actividad.nombre + ' — ' + h.diaSemana + ' ' + #strings.substring(h.horaInicio.toString(), 0, 5)}"
+										th:selected="${sesion.horario != null and sesion.horario.id == h.id}">
+									</option>
+								</select>
+							</div>
+
+							<div class="row g-3 mb-3">
+								<div class="col-md-6">
+									<label class="form-label">Número de sesión <span class="text-danger">*</span></label>
+									<input type="number" class="form-control" th:field="*{numeroSesion}"
+										placeholder="Ej. 1" min="1" required>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Fecha <span class="text-danger">*</span></label>
+									<input type="date" class="form-control" name="fecha"
+										th:value="${sesion.fecha != null ? #temporals.format(sesion.fecha, 'yyyy-MM-dd') : ''}"
+										required>
+								</div>
+							</div>
+
+							<div class="mb-3">
+								<label class="form-label">Observaciones</label>
+								<textarea class="form-control" th:field="*{observaciones}" rows="2"
+									maxlength="255" placeholder="Opcional..."></textarea>
+							</div>
+
+							<div class="d-flex gap-2">
+								<button type="submit" class="btn btn-guardar">
+									<i class="fas fa-save me-1"></i> Guardar
+								</button>
+								<a th:href="@{/sesion/sesiones}" class="btn btn-outline-secondary">
+									<i class="fas fa-times me-1"></i> Cancelar
+								</a>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</main>
+	<footer th:replace="~{fragmento/fragmento :: footer}"></footer>
+	<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

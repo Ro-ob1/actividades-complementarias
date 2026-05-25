@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Formulario Evaluación</title>
+	<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+	<header th:replace="~{fragmento/fragmento :: main-header}"></header>
+	<main class="container flex-grow-1 my-4">
+		<div class="row justify-content-center">
+			<div class="col-md-8">
+
+				<div th:if="${msg != null and #strings.startsWith(msg, '⚠')}"
+					class="alert alert-danger alert-dismissible fade show" role="alert">
+					<i class="fas fa-exclamation-circle me-1"></i>
+					<span th:text="${msg}"></span>
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+				<div th:if="${msg != null and !#strings.startsWith(msg, '⚠')}"
+					class="alert alert-success alert-dismissible fade show" role="alert">
+					<i class="fas fa-check-circle me-1"></i>
+					<span th:text="${msg}"></span>
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+
+				<div class="card shadow-sm">
+					<div class="card-header-custom">
+						<i class="fas fa-star-half-alt me-2"></i>
+						<span th:text="${evaluacion.id != null} ? 'Editar evaluación' : 'Registrar evaluación'"></span>
+					</div>
+					<div class="card-body p-4">
+						<form th:action="@{/evaluacion/guardar}" method="post" th:object="${evaluacion}">
+							<input type="hidden" th:field="*{id}">
+							<input th:if="${evaluacion.fecha != null}"
+								type="hidden" name="fechaOriginal" th:value="${evaluacion.fecha}">
+
+							<!-- INSCRIPCIÓN -->
+							<div class="mb-3">
+								<label class="form-label">Inscripción (alumno — actividad)
+									<span class="text-danger">*</span>
+								</label>
+								<div th:if="${evaluacion.id == null}" class="position-relative">
+									<input type="text" id="inputInscripcion" class="form-control form-control-sm"
+										placeholder="Escriba nombre del alumno o actividad..."
+										autocomplete="off">
+									<ul id="sugerenciasInscripcion"
+										class="list-group position-absolute w-100 shadow-sm"
+										style="z-index:1000;max-height:220px;overflow-y:auto;display:none;top:100%;left:0;font-size:13px;"></ul>
+								</div>
+								<input th:if="${evaluacion.id == null}"
+									type="hidden" name="inscripcion.id" id="inscripcionIdHidden">
+								<div id="inscripcionError" th:if="${evaluacion.id == null}"
+									class="form-text text-danger d-none">
+									<i class="bi bi-exclamation-circle me-1"></i>Selecciona una inscripción de la lista.
+								</div>
+								<div th:if="${evaluacion.id != null}">
+									<input type="hidden" name="inscripcion.id"
+										th:value="${evaluacion.inscripcion.id}">
+									<input type="text" class="form-control form-control-sm" readonly
+										style="background:#f4f6f8;"
+										th:value="${evaluacion.inscripcion.alumno.persona.nombre + ' ' + evaluacion.inscripcion.alumno.persona.apellido + ' — ' + evaluacion.inscripcion.actividad.nombre}">
+								</div>
+							</div>
+
+							<!-- INSTRUCTOR (solo lectura) -->
+							<div class="mb-3">
+								<label class="form-label">Instructor asignado</label>
+								<input th:if="${evaluacion.id == null}"
+									type="text" id="instructorDisplay" class="form-control form-control-sm" readonly
+									style="background:#f4f6f8;" placeholder="Se asigna al seleccionar inscripción...">
+								<input th:if="${evaluacion.id != null}"
+									type="text" class="form-control form-control-sm" readonly
+									style="background:#f4f6f8;"
+									th:value="${evaluacion.instructor != null ? evaluacion.instructor.persona.nombre + ' ' + evaluacion.instructor.persona.apellido : 'Sin instructor'}">
+								<div class="form-text text-muted" style="font-size:11px;">
+									Se deriva automáticamente de la actividad de la inscripción.
+								</div>
+							</div>
+
+							<!-- VALOR NUMÉRICO y NIVEL AUTO (ambos derivados de criterios) -->
+							<div class="row g-3 mb-3">
+								<div class="col-md-6">
+									<label class="form-label">Valor numérico (promedio)</label>
+									<input type="text" id="valorNumericoDisplay" class="form-control" readonly
+										style="background:#f4f6f8;" placeholder="Se calcula de los criterios...">
+									<input type="hidden" id="valorNumericoHidden" name="valorNumerico"
+										th:value="${evaluacion.valorNumerico}">
+									<div class="form-text text-muted" style="font-size:11px;">
+										Promedio automático de los criterios.
+									</div>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Nivel de desempeño</label>
+									<input type="text" id="nivelDisplay" class="form-control" readonly
+										style="background:#f4f6f8;" placeholder="Auto-calculado...">
+									<input type="hidden" id="nivelIdHidden" name="nivel.id"
+										th:value="${evaluacion.nivel != null ? evaluacion.nivel.id : ''}">
+									<div class="form-text text-muted" style="font-size:11px;">
+										Se asigna automáticamente según el promedio.
+									</div>
+								</div>
+							</div>
+
+							<!-- CRITERIOS DE EVALUACIÓN -->
+							<div th:if="${criterios != null and !#lists.isEmpty(criterios)}" class="mb-4">
+								<label class="form-label fw-semibold">
+									<i class="bi bi-list-check me-1"></i>Criterios de evaluación
+									<small class="text-muted fw-normal">(opcional por criterio)</small>
+								</label>
+								<div class="table-responsive">
+									<table class="table table-bordered table-sm mb-0" style="font-size:13px;">
+										<thead class="table-light">
+											<tr>
+												<th style="width:50px;">#</th>
+												<th>Criterio</th>
+												<th style="width:130px;">Valor (0–100)</th>
+												<th style="width:110px;" class="text-center">Nivel</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr th:each="c : ${criterios}">
+												<td class="text-center" th:text="${c.numeroCriterio}"></td>
+												<td>
+													<span th:text="${c.nombre}"></span>
+													<div th:if="${c.descripcion != null and c.descripcion != ''}"
+														class="text-muted" style="font-size:11px;" th:text="${c.descripcion}">
+													</div>
+												</td>
+												<td>
+													<input type="hidden" name="criterioId" th:value="${c.id}">
+													<input type="number" name="criterioValor"
+														class="form-control form-control-sm criterioValorInput"
+														step="0.1" min="0" max="100"
+														placeholder="—"
+														th:attr="data-criterio-id=${c.id}">
+												</td>
+												<td class="text-center">
+													<span class="nivelBadge badge text-bg-secondary">—</span>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</div>
+
+							<!-- OBSERVACIONES -->
+							<div class="mb-4">
+								<label class="form-label">Observaciones
+									<small class="text-muted">(opcional)</small>
+								</label>
+								<textarea class="form-control" th:field="*{observaciones}" rows="2"
+									maxlength="255" placeholder="Opcional..."></textarea>
+							</div>
+
+							<div class="d-flex gap-2">
+								<button type="submit" class="btn btn-guardar" id="btnGuardar">
+									<i class="fas fa-save me-1"></i> Guardar
+								</button>
+								<a th:href="@{/evaluacion/evaluaciones}" class="btn btn-outline-secondary">
+									<i class="fas fa-times me-1"></i> Cancelar
+								</a>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</main>
+	<footer th:replace="~{fragmento/fragmento :: footer}"></footer>
+	<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+
+		// Datos de inscripciones para autocomplete
+		var inscripcionesData = [];
+		/*[# th:each="i : ${inscripciones}"]*/
+		inscripcionesData.push({
+			id: String(/*[[${i.id}]]*/ 0),
+			texto: /*[[${i.alumno.persona.nombre + ' ' + i.alumno.persona.apellido + ' — ' + i.actividad.nombre}]]*/ '',
+			instructorNombre: /*[[${i.actividad.instructor != null ? i.actividad.instructor.persona.nombre + ' ' + i.actividad.instructor.persona.apellido : 'Sin instructor asignado'}]]*/ ''
+		});
+		/*[/]*/
+
+		// Datos de niveles para auto-asignación
+		var nivelesData = [];
+		/*[# th:each="n : ${niveles}"]*/
+		nivelesData.push({
+			id: /*[[${n.id}]]*/ 0,
+			nombre: /*[[${n.nombre}]]*/ '',
+			rangoMin: /*[[${n.rangoMin}]]*/ 0,
+			rangoMax: /*[[${n.rangoMax}]]*/ 0
+		});
+		/*[/]*/
+
+		// Criterios eval existentes (en edición: criterioId -> valor)
+		var criteriosEvalData = {};
+		/*[# th:each="ce : ${criteriosEval}"]*/
+		criteriosEvalData[String(/*[[${ce.criterio.id}]]*/ 0)] = /*[[${ce.valor}]]*/ 0;
+		/*[/]*/
+
+		function getNivelParaValor(valor) {
+			for (var i = 0; i < nivelesData.length; i++) {
+				var n = nivelesData[i];
+				if (valor >= n.rangoMin && valor <= n.rangoMax) return n;
+			}
+			return null;
+		}
+
+		function actualizarNivelPrincipal(valor) {
+			var display = document.getElementById('nivelDisplay');
+			var hidden  = document.getElementById('nivelIdHidden');
+			if (!display || !hidden) return;
+			var nivel = (valor !== '' && valor !== null) ? getNivelParaValor(parseFloat(valor)) : null;
+			if (nivel) {
+				display.value = nivel.nombre;
+				hidden.value  = nivel.id;
+			} else {
+				display.value = '';
+				hidden.value  = '';
+			}
+		}
+
+		function recalcularPromedio() {
+			var inputs = document.querySelectorAll('.criterioValorInput');
+			var suma = 0, count = 0;
+			inputs.forEach(function (input) {
+				if (input.value !== '') {
+					suma += parseFloat(input.value);
+					count++;
+				}
+			});
+			var dispV = document.getElementById('valorNumericoDisplay');
+			var hidV  = document.getElementById('valorNumericoHidden');
+			if (count > 0) {
+				var promedio = Math.round((suma / count) * 10) / 10;
+				if (dispV) dispV.value = promedio;
+				if (hidV)  hidV.value  = promedio;
+				actualizarNivelPrincipal(promedio);
+			} else {
+				if (dispV) dispV.value = '';
+				if (hidV)  hidV.value  = '';
+				actualizarNivelPrincipal('');
+			}
+		}
+
+		// Criterios: badge por fila + pre-poblar en edición + recalcular promedio
+		document.querySelectorAll('.criterioValorInput').forEach(function (input) {
+			var row       = input.closest('tr');
+			var badge     = row.querySelector('.nivelBadge');
+			var criterioId = input.getAttribute('data-criterio-id');
+
+			// Pre-poblar en edición
+			if (criteriosEvalData[criterioId] !== undefined) {
+				input.value = criteriosEvalData[criterioId];
+				var n = getNivelParaValor(criteriosEvalData[criterioId]);
+				if (n && badge) {
+					badge.textContent = n.nombre;
+					badge.className = 'nivelBadge badge text-bg-primary';
+				}
+			}
+
+			input.addEventListener('input', function () {
+				if (badge) {
+					var v = this.value;
+					if (v === '') {
+						badge.textContent = '—';
+						badge.className = 'nivelBadge badge text-bg-secondary';
+					} else {
+						var n = getNivelParaValor(parseFloat(v));
+						if (n) {
+							badge.textContent = n.nombre;
+							badge.className = 'nivelBadge badge text-bg-primary';
+						} else {
+							badge.textContent = '?';
+							badge.className = 'nivelBadge badge text-bg-warning';
+						}
+					}
+				}
+				recalcularPromedio();
+			});
+		});
+
+		// Inicializar promedio al cargar (edición con criterios pre-poblados)
+		recalcularPromedio();
+
+		// Autocomplete inscripción (solo en nuevo)
+		(function () {
+			var input   = document.getElementById('inputInscripcion');
+			var lista   = document.getElementById('sugerenciasInscripcion');
+			var hidden  = document.getElementById('inscripcionIdHidden');
+			var error   = document.getElementById('inscripcionError');
+			var display = document.getElementById('instructorDisplay');
+			if (!input) return;
+
+			input.addEventListener('input', function () {
+				var q = this.value.toLowerCase().trim();
+				hidden.value = '';
+				if (display) display.value = '';
+				if (error) error.classList.add('d-none');
+
+				if (q.length < 1) { lista.style.display = 'none'; return; }
+
+				var coincidentes = inscripcionesData.filter(function (i) {
+					return i.texto.toLowerCase().includes(q);
+				}).slice(0, 10);
+
+				lista.innerHTML = '';
+				if (!coincidentes.length) { lista.style.display = 'none'; return; }
+
+				coincidentes.forEach(function (i) {
+					var li = document.createElement('li');
+					li.className = 'list-group-item list-group-item-action py-1 px-2';
+					li.style.cursor = 'pointer';
+					li.textContent = i.texto;
+					li.addEventListener('mousedown', function () {
+						input.value = i.texto;
+						hidden.value = i.id;
+						if (display) display.value = i.instructorNombre;
+						lista.style.display = 'none';
+						if (error) error.classList.add('d-none');
+					});
+					lista.appendChild(li);
+				});
+				lista.style.display = 'block';
+			});
+
+			input.addEventListener('blur', function () {
+				setTimeout(function () { lista.style.display = 'none'; }, 150);
+			});
+		})();
+
+		// Validación al enviar
+		document.querySelector('form').addEventListener('submit', function (e) {
+			var hiddenInsc = document.getElementById('inscripcionIdHidden');
+			var error      = document.getElementById('inscripcionError');
+			if (hiddenInsc && !hiddenInsc.value) {
+				e.preventDefault();
+				if (error) error.classList.remove('d-none');
+				document.getElementById('inputInscripcion').focus();
+				return;
+			}
+			var hiddenVal = document.getElementById('valorNumericoHidden');
+			if (hiddenVal && !hiddenVal.value) {
+				e.preventDefault();
+				alert('Ingresa al menos un criterio para calcular el valor de la evaluación.');
+			}
+		});
+		/*]]>*/
+	</script>
+</body>
+
+</html>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Formulario Actividad</title>
+	<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+	<header th:replace="~{fragmento/fragmento :: main-header}"></header>
+	<main class="container flex-grow-1 my-4">
+		<div class="row justify-content-center">
+			<div class="col-md-7">
+				<div class="card shadow-sm">
+					<div class="card-header-custom">
+						<i class="fas fa-running me-2"></i>
+						<span th:text="${actividad.id != null} ? 'Editar actividad' : 'Registrar actividad'"></span>
+					</div>
+					<div class="card-body p-4">
+						<form th:action="@{/actividad/guardar}" method="post"
+						      th:object="${actividad}" enctype="multipart/form-data">
+							<input type="hidden" th:field="*{id}">
+							<input type="hidden" name="imagenActual" th:value="${actividad.imagenFlyer}">
+
+							<div th:if="${actividad.id != null}" class="mb-3">
+								<label class="form-label">ID</label>
+								<input type="text" class="form-control" th:value="${actividad.id}" readonly>
+							</div>
+
+							<div class="mb-3">
+								<label class="form-label">Nombre <span class="text-danger">*</span></label>
+								<input type="text" name="nombre" class="form-control"
+									th:value="${actividad.nombre}"
+									placeholder="Ej. Fútbol Varonil"
+									required minlength="2" maxlength="100"
+									oninput="this.value = capitalizarPalabras(this.value)">
+							</div>
+
+							<div class="mb-3">
+								<label class="form-label">Descripción</label>
+								<textarea name="descripcion" class="form-control"
+									th:text="${actividad.descripcion}" rows="2" maxlength="255"></textarea>
+							</div>
+
+							<div class="row g-3 mb-3">
+								<div class="col-md-6">
+									<label class="form-label">Disciplina <span class="text-danger">*</span></label>
+									<select id="selectDisciplina" name="disciplina.id" class="form-select" required
+									        onchange="filtrarInstructores()">
+										<option value="">— Seleccione —</option>
+										<option th:each="d : ${disciplinas}"
+										        th:value="${d.id}"
+										        th:text="${d.nombre}"
+										        th:selected="${actividad.disciplina != null and actividad.disciplina.id == d.id}">
+										</option>
+									</select>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Cupo máximo <span class="text-danger">*</span></label>
+									<input type="number" name="cupoMaximo" class="form-control"
+										th:value="${actividad.cupoMaximo}"
+										placeholder="Ej. 25" min="1" max="200" required>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Semestre</label>
+									<input type="text" class="form-control"
+									       th:value="${actividad.semestre != null ? actividad.semestre.nombre : ''}"
+									       readonly>
+									<input type="hidden" name="semestre.id"
+									       th:value="${actividad.semestre != null ? actividad.semestre.id : ''}">
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Instructor <span class="text-danger">*</span></label>
+									<select id="selectInstructor" name="instructor.id" class="form-select" required
+									        th:disabled="${actividad.disciplina == null}">
+										<option value="">— Seleccione —</option>
+										<option th:each="i : ${instructores}"
+										        th:value="${i.id}"
+										        th:text="${i.persona.nombre + ' ' + i.persona.apellido}"
+										        th:attr="data-disciplina=${i.disciplina != null ? i.disciplina.id : ''}"
+										        th:selected="${actividad.instructor != null and actividad.instructor.id == i.id}">
+										</option>
+									</select>
+								</div>
+							</div>
+
+							<div th:if="${actividad.imagenFlyer != null and actividad.imagenFlyer != 'no-image.jpg'}"
+								class="mb-2">
+								<label class="form-label">Imagen actual</label><br>
+								<img th:src="@{/images/actividad/{img}(img=${actividad.imagenFlyer})}"
+									class="img-actividad">
+							</div>
+							<div class="mb-3">
+								<label class="form-label">Imagen flyer</label>
+								<input type="file" name="imagenArchivo" class="form-control" accept="image/*">
+							</div>
+
+							<div th:if="${actividad.id != null}" class="mb-3">
+								<label class="form-label">Activo</label>
+								<div class="d-flex gap-3">
+									<div class="form-check">
+										<input class="form-check-input" type="radio"
+										       name="activo" value="1"
+										       th:checked="${actividad.activo == 1}">
+										<label class="form-check-label">Sí</label>
+									</div>
+									<div class="form-check">
+										<input class="form-check-input" type="radio"
+										       name="activo" value="0"
+										       th:checked="${actividad.activo == 0}">
+										<label class="form-check-label">No</label>
+									</div>
+								</div>
+							</div>
+
+							<div class="d-flex gap-2 mt-3">
+								<button type="submit" class="btn btn-guardar">
+									<i class="fas fa-save me-1"></i> Guardar
+								</button>
+								<a th:href="@{/actividad/actividades}" class="btn btn-outline-secondary">
+									<i class="fas fa-times me-1"></i> Cancelar
+								</a>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</main>
+	<footer th:replace="~{fragmento/fragmento :: footer}"></footer>
+	<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+	<script>
+		function capitalizarPalabras(texto) {
+			return texto.replace(/(^|\s)\S/g, c => c.toUpperCase());
+		}
+
+		let todasOpcionesInstructor = [];
+
+		document.addEventListener('DOMContentLoaded', function () {
+			const selectInstructor = document.getElementById('selectInstructor');
+			selectInstructor.querySelectorAll('option').forEach(opt => {
+				todasOpcionesInstructor.push({
+					value: opt.value,
+					text: opt.textContent.trim(),
+					disciplina: opt.dataset.disciplina || '',
+					selected: opt.selected
+				});
+			});
+			filtrarInstructores();
+		});
+
+		function filtrarInstructores() {
+			const disciplinaId = document.getElementById('selectDisciplina').value;
+			const selectInstructor = document.getElementById('selectInstructor');
+			const valorActual = selectInstructor.value;
+
+			selectInstructor.innerHTML = '';
+
+			if (!disciplinaId) {
+				selectInstructor.disabled = true;
+				const opt = document.createElement('option');
+				opt.value = '';
+				opt.textContent = '— Seleccione una disciplina primero —';
+				selectInstructor.appendChild(opt);
+				return;
+			}
+
+			selectInstructor.disabled = false;
+
+			const placeholder = document.createElement('option');
+			placeholder.value = '';
+			placeholder.textContent = '— Seleccione —';
+			selectInstructor.appendChild(placeholder);
+
+			const coincidentes = todasOpcionesInstructor.filter(
+				o => o.value !== '' && o.disciplina === disciplinaId
+			);
+
+			coincidentes.forEach(o => {
+				const opt = document.createElement('option');
+				opt.value = o.value;
+				opt.textContent = o.text;
+				opt.dataset.disciplina = o.disciplina;
+				if (o.value === valorActual) opt.selected = true;
+				selectInstructor.appendChild(opt);
+			});
+
+			if (coincidentes.length === 0) {
+				const aviso = document.createElement('option');
+				aviso.value = '';
+				aviso.textContent = 'Sin instructores para esta disciplina';
+				aviso.disabled = true;
+				selectInstructor.appendChild(aviso);
+			}
+		}
+	</script>
+</body>
+
+</html>

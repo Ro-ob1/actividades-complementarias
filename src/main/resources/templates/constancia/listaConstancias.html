@@ -1,0 +1,191 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Constancias</title>
+	<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+	<header th:replace="~{fragmento/fragmento :: main-header}"></header>
+	<main class="container flex-grow-1 my-4">
+		<div class="row justify-content-center">
+			<div class="col-md-12">
+
+				<div th:if="${msg != null and #strings.startsWith(msg, '⚠')}"
+					class="alert alert-danger alert-dismissible fade show" role="alert">
+					<i class="fas fa-exclamation-circle me-1"></i>
+					<span th:text="${msg}"></span>
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+				<div th:if="${msg != null and !#strings.startsWith(msg, '⚠')}"
+					class="alert alert-success alert-dismissible fade show" role="alert">
+					<i class="fas fa-check-circle me-1"></i>
+					<span th:text="${msg}"></span>
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+
+				<!-- FILTROS -->
+				<div th:if="${!esAlumno}" class="card shadow-sm mb-3">
+					<div class="card-body py-2 px-3">
+						<form method="get" th:action="@{/constancia/constancias}" class="row g-2 align-items-end">
+							<div class="col-md-4">
+								<label class="form-label mb-1" style="font-size:13px;">Alumno</label>
+								<input type="text" name="alumno" class="form-control form-control-sm"
+									placeholder="Nombre del alumno..." th:value="${alumno}">
+							</div>
+							<div class="col-md-3">
+								<label class="form-label mb-1" style="font-size:13px;">Semestre</label>
+								<select name="idSemestre" class="form-select form-select-sm">
+									<option value="">— Todos —</option>
+									<option th:each="s : ${semestres}"
+										th:value="${s.id}"
+										th:text="${s.nombre}"
+										th:selected="${idSemestre != null and idSemestre == s.id}">
+									</option>
+								</select>
+							</div>
+							<div class="col-md-3">
+								<label class="form-label mb-1" style="font-size:13px;">Estatus</label>
+								<select name="estatus" class="form-select form-select-sm">
+									<option value="">— Todos —</option>
+									<option value="GENERADA"  th:selected="${estatus == 'GENERADA'}">Generada</option>
+									<option value="ENTREGADA" th:selected="${estatus == 'ENTREGADA'}">Entregada</option>
+								</select>
+							</div>
+							<div class="col-md-2 d-flex gap-1">
+								<button type="submit" class="btn btn-guardar btn-sm w-100">
+									<i class="bi bi-search me-1"></i> Filtrar
+								</button>
+								<a th:href="@{/constancia/constancias}" class="btn btn-outline-secondary btn-sm">
+									<i class="bi bi-x-lg"></i>
+								</a>
+							</div>
+						</form>
+					</div>
+				</div>
+
+				<div class="card shadow-sm">
+					<div class="card-header-custom d-flex align-items-center justify-content-between">
+						<span><i class="fas fa-certificate me-2"></i>Constancias</span>
+						<a sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')" th:href="@{/constancia/nuevo}" class="btn btn-light btn-sm">
+							<i class="fas fa-plus me-1"></i> Nueva
+						</a>
+					</div>
+					<div class="card-body">
+						<div class="table-responsive">
+							<table class="table table-bordered table-hover mb-0">
+								<thead>
+									<tr>
+										<th>ID</th>
+										<th>Alumno</th>
+										<th>Actividad</th>
+										<th>Semestre</th>
+										<th>Fecha generación</th>
+										<th class="text-center">Valor (0–100)</th>
+										<th class="text-center">Val. curricular</th>
+										<th>Nivel</th>
+										<th class="text-center">Estatus</th>
+										<th class="text-center">PDF</th>
+										<th class="text-center">Operaciones</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr th:if="${#lists.isEmpty(constancias)}">
+										<td colspan="11" class="text-center text-muted py-3">No se encontraron constancias.</td>
+									</tr>
+									<tr th:each="constancia : ${constancias}">
+										<td th:text="${constancia.id}"></td>
+										<td th:text="${constancia.inscripcion.alumno.persona.nombre + ' ' + constancia.inscripcion.alumno.persona.apellido}"></td>
+										<td th:text="${constancia.inscripcion.actividad.nombre}"></td>
+										<td th:text="${constancia.semestre != null ? constancia.semestre.nombre : '—'}"></td>
+										<td th:text="${constancia.fechaGeneracion}"></td>
+										<td class="text-center" th:text="${constancia.valorNumerico}"></td>
+										<td class="text-center" th:text="${constancia.valorCurricular}"></td>
+										<td>
+											<span th:if="${constancia.nivel != null}"
+												class="badge text-bg-primary" th:text="${constancia.nivel.nombre}"></span>
+											<span th:unless="${constancia.nivel != null}" class="text-muted">—</span>
+										</td>
+										<td class="text-center">
+											<span th:if="${constancia.estatus == 'GENERADA'}"
+												class="badge text-bg-warning text-dark">Generada</span>
+											<span th:if="${constancia.estatus == 'ENTREGADA'}"
+												class="badge text-bg-success">Entregada</span>
+											<span th:if="${constancia.estatus == 'CANCELADA'}"
+												class="badge text-bg-danger">Cancelada</span>
+										</td>
+										<td class="text-center">
+											<a th:href="@{/constancia/pdf/{id}(id=${constancia.id})}"
+												target="_blank" class="btn btn-sm btn-outline-secondary">
+												<i class="fas fa-file-pdf"></i>
+											</a>
+										</td>
+										<td class="text-center">
+											<a class="btn btn-ver btn-sm"
+												th:href="@{/constancia/ver/{id}(id=${constancia.id})}">
+												<i class="bi bi-eye"></i>
+											</a>
+											<a sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')" class="btn btn-editar btn-sm"
+												th:href="@{/constancia/editar/{id}(id=${constancia.id})}">
+												<i class="bi bi-pencil"></i>
+											</a>
+											<button sec:authorize="hasRole('ROLE_ADMIN')" class="btn btn-eliminar btn-sm" data-bs-toggle="modal"
+												data-bs-target="#modalEliminar"
+												th:attr="data-id=${constancia.id}, data-nombre=${constancia.inscripcion.alumno.persona.nombre + ' ' + constancia.inscripcion.alumno.persona.apellido + ' — ' + constancia.inscripcion.actividad.nombre}"
+												onclick="prepararEliminar(this)">
+												<i class="bi bi-trash"></i>
+											</button>
+										</td>
+									</tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="modal fade" id="modalEliminar" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">
+							<i class="fas fa-exclamation-triangle text-warning me-2"></i>
+							Confirmar eliminación
+						</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body" style="font-size:14px;">
+						¿Eliminar la constancia de <strong id="nombreEliminar"></strong>?
+						<br>
+						<span style="font-size:12px;color:var(--tecnm-gris);">Esta acción no se puede deshacer.</span>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+							<i class="fas fa-times me-1"></i> Cancelar
+						</button>
+						<a id="btnConfirmarEliminar" href="#" class="btn btn-eliminar">
+							<i class="fas fa-trash me-1"></i> Sí, eliminar
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+		<script>
+			function prepararEliminar(btn) {
+				document.getElementById('nombreEliminar').textContent = btn.getAttribute('data-nombre');
+				document.getElementById('btnConfirmarEliminar').href = '/constancia/eliminar/' + btn.getAttribute('data-id');
+			}
+		</script>
+	</main>
+	<footer th:replace="~{fragmento/fragmento :: footer}"></footer>
+	<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

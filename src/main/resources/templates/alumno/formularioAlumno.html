@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Formulario Alumno</title>
+	<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+	<header th:replace="~{fragmento/fragmento :: main-header}"></header>
+	<main class="container flex-grow-1 my-4">
+		<div class="row justify-content-center">
+			<div class="col-md-7">
+				<div class="card shadow-sm">
+					<div class="card-header-custom">
+						<i class="fas fa-user-graduate me-2"></i>
+						<span th:text="${alumno.id != null} ? 'Editar alumno' : 'Registrar alumno'"></span>
+					</div>
+					<div class="card-body p-4">
+						<form th:action="@{/alumno/guardar}" method="post">
+							<input type="hidden" th:name="id" th:value="${alumno.id}">
+
+							<div th:if="${alumno.id != null}" class="mb-3">
+								<label class="form-label">ID</label>
+								<input type="text" class="form-control" th:value="${alumno.id}" readonly>
+							</div>
+
+							<div class="section-label">Datos personales</div>
+							<div class="row g-3 mb-3">
+								<div class="col-md-6">
+									<label class="form-label">
+										Nombre <span class="text-danger">*</span>
+									</label>
+									<input type="text" name="nombre" class="form-control" th:value="${persona.nombre}"
+										placeholder="Ej. Juan" required minlength="2" maxlength="80"
+										pattern="[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+" title="Solo letras y espacios"
+										oninput="this.value = capitalizarPalabras(this.value)">
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">
+										Apellido <span class="text-danger">*</span>
+									</label>
+									<input type="text" name="apellido" class="form-control"
+										th:value="${persona.apellido}" placeholder="Ej. García López" required
+										minlength="2" maxlength="80" pattern="[A-Za-záéíóúÁÉÍÓÚüÜñÑ\s]+"
+										title="Solo letras y espacios"
+										oninput="this.value = capitalizarPalabras(this.value)">
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Email</label>
+									<input type="email" name="email" class="form-control" th:value="${persona.email}"
+										placeholder="Ej. juan@itch.edu.mx" maxlength="100">
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">Teléfono</label>
+									<input type="tel" name="telefono" class="form-control"
+										th:value="${persona.telefono}" placeholder="Ej. 7471234567" maxlength="10"
+										pattern="[0-9]{10}" title="10 dígitos numéricos">
+								</div>
+							</div>
+
+							<div class="section-label">Datos académicos</div>
+							<div class="row g-3 mb-3">
+								<div class="col-md-6">
+									<label class="form-label">
+										Número de control <span class="text-danger">*</span>
+									</label>
+									<input type="text" name="numControl" class="form-control"
+										th:value="${alumno.numControl}" placeholder="Ej. 22520001" required
+										minlength="8" maxlength="10" pattern="[0-9]{8,10}"
+										title="8 a 10 dígitos numéricos" style="text-transform:uppercase;"
+										oninput="this.value = this.value.toUpperCase()">
+									<div class="form-text text-muted" style="font-size:11px;">
+										8 a 10 dígitos numéricos.
+									</div>
+								</div>
+								<div class="col-md-6">
+									<label class="form-label">
+										Semestre actual <span class="text-danger">*</span>
+									</label>
+									<select name="semestreActual" class="form-select" required>
+										<option value="">— Seleccione —</option>
+										<option th:each="i : ${#numbers.sequence(1,9)}" th:value="${i}" th:text="${i}"
+											th:selected="${alumno.semestreActual == i}"></option>
+									</select>
+								</div>
+								<div class="col-12">
+									<label class="form-label">
+										Carrera <span class="text-danger">*</span>
+									</label>
+									<select name="carrera.id" class="form-select" required>
+										<option value="">— Seleccione una carrera —</option>
+										<option th:each="c : ${carreras}" th:value="${c.id}" th:text="${c.nombre}"
+											th:selected="${alumno.carrera != null
+						                                       and alumno.carrera.id == c.id}">
+										</option>
+									</select>
+								</div>
+							</div>
+
+							<div th:if="${alumno.id != null}" class="mb-3">
+								<label class="form-label">Activo</label>
+								<div class="d-flex gap-3">
+									<div class="form-check">
+										<input class="form-check-input" type="radio" name="activo" value="1"
+											th:checked="${alumno.activo == 1}">
+										<label class="form-check-label">Sí</label>
+									</div>
+									<div class="form-check">
+										<input class="form-check-input" type="radio" name="activo" value="0"
+											th:checked="${alumno.activo == 0}">
+										<label class="form-check-label">No</label>
+									</div>
+								</div>
+							</div>
+
+							<div class="d-flex gap-2 mt-3">
+								<button type="submit" class="btn btn-guardar">
+									<i class="fas fa-save me-1"></i> Guardar
+								</button>
+								<a th:href="@{/alumno/alumnos}" class="btn btn-outline-secondary">
+									<i class="fas fa-times me-1"></i> Cancelar
+								</a>
+							</div>
+						</form>
+						<script>
+							function capitalizarPalabras(texto) {
+								return texto.replace(/(^|\s)\S/g, c => c.toUpperCase());
+							}
+						</script>
+					</div>
+				</div>
+			</div>
+		</div>
+	</main>
+	<footer th:replace="~{fragmento/fragmento :: footer}"></footer>
+	<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

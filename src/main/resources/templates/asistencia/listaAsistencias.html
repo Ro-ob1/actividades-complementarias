@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Asistencias</title>
+	<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+	<header th:replace="~{fragmento/fragmento :: main-header}"></header>
+	<main class="container flex-grow-1 my-4">
+		<div class="row justify-content-center">
+			<div class="col-md-11">
+
+				<div th:if="${msg != null and #strings.startsWith(msg, '⚠')}"
+					class="alert alert-danger alert-dismissible fade show" role="alert">
+					<i class="fas fa-exclamation-circle me-1"></i>
+					<span th:text="${msg}"></span>
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+				<div th:if="${msg != null and !#strings.startsWith(msg, '⚠')}"
+					class="alert alert-success alert-dismissible fade show" role="alert">
+					<i class="fas fa-check-circle me-1"></i>
+					<span th:text="${msg}"></span>
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+
+				<!-- ===== VISTA 1: tarjetas por actividad ===== -->
+				<div th:if="${idActividad == null}">
+					<div class="card shadow-sm">
+						<div class="card-header-custom">
+							<i class="fas fa-clipboard-check me-2"></i>Asistencias por actividad
+						</div>
+						<div class="card-body">
+							<div th:if="${resumenes == null or #lists.isEmpty(resumenes)}"
+								class="text-center text-muted py-4">
+								<i class="fas fa-info-circle me-1"></i>
+								Aún no hay sesiones realizadas con pase de lista registrado.
+							</div>
+							<div th:if="${resumenes != null and !#lists.isEmpty(resumenes)}" class="row g-3">
+								<div th:each="r : ${resumenes}" class="col-md-4">
+									<div class="card h-100 shadow-sm">
+										<div class="card-body">
+											<h6 class="fw-semibold mb-3" th:text="${r.actividad.nombre}"></h6>
+											<div class="d-flex gap-2 flex-wrap mb-3">
+												<span class="badge bg-success"
+													th:text="${r.sesionesRealizadas + ' sesión(es) con lista'}">
+												</span>
+												<span class="badge bg-primary"
+													th:text="${r.inscritos + ' alumno(s) inscritos'}">
+												</span>
+											</div>
+											<div class="d-flex gap-2">
+												<a th:href="@{/asistencia/asistencias(idActividad=${r.actividad.id})}"
+													class="btn btn-ver btn-sm flex-grow-1">
+													<i class="bi bi-list-check me-1"></i> Ver asistencias
+												</a>
+												<a th:href="@{/sesion/reporte/{id}(id=${r.actividad.id})}"
+													class="btn btn-outline-secondary btn-sm" title="Reporte">
+													<i class="bi bi-bar-chart"></i>
+												</a>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- ===== VISTA 2: registros de una actividad ===== -->
+				<div th:if="${idActividad != null}">
+					<div class="card shadow-sm">
+						<div class="card-header-custom d-flex align-items-center justify-content-between">
+							<span>
+								<i class="fas fa-clipboard-check me-2"></i>
+								Asistencias — <span th:text="${actividad.nombre}"></span>
+							</span>
+							<div class="d-flex gap-2">
+								<a th:href="@{/sesion/reporte/{id}(id=${actividad.id})}"
+									class="btn btn-light btn-sm">
+									<i class="bi bi-bar-chart me-1"></i> Reporte
+								</a>
+								<a th:href="@{/asistencia/asistencias}" class="btn btn-light btn-sm">
+									<i class="bi bi-arrow-left me-1"></i> Actividades
+								</a>
+							</div>
+						</div>
+						<div class="card-body">
+
+							<!-- Filtros -->
+							<form th:action="@{/asistencia/asistencias}" method="get"
+								class="d-flex gap-2 mb-3 flex-wrap align-items-end search-bar">
+								<input type="hidden" name="idActividad" th:value="${idActividad}">
+								<div>
+									<label class="form-label mb-1" style="font-size:12px;">Sesión</label>
+									<select name="idSesion" class="form-select form-select-sm" style="min-width:180px;">
+										<option value="">— Todas las sesiones —</option>
+										<option th:each="s : ${sesiones}"
+											th:value="${s.id}"
+											th:text="${'Sesión #' + s.numeroSesion + '  —  ' + s.fecha}"
+											th:selected="${idSesion == s.id}">
+										</option>
+									</select>
+								</div>
+								<div>
+									<label class="form-label mb-1" style="font-size:12px;">Desde</label>
+									<input type="date" name="fechaDesde" class="form-control form-control-sm"
+										style="max-width:155px;" th:value="${fechaDesde}">
+								</div>
+								<div>
+									<label class="form-label mb-1" style="font-size:12px;">Hasta</label>
+									<input type="date" name="fechaHasta" class="form-control form-control-sm"
+										style="max-width:155px;" th:value="${fechaHasta}">
+								</div>
+								<div>
+									<label class="form-label mb-1" style="font-size:12px;">Asistió</label>
+									<select name="filtroAsistio" class="form-select form-select-sm" style="min-width:130px;">
+										<option value="">— Todos —</option>
+										<option value="SI" th:selected="${filtroAsistio == 'SI'}">Sí asistió</option>
+										<option value="NO" th:selected="${filtroAsistio == 'NO'}">No asistió</option>
+									</select>
+								</div>
+								<div class="d-flex gap-2 align-self-end">
+									<button class="btn btn-sm btn-guardar">
+										<i class="bi bi-search"></i> Filtrar
+									</button>
+									<a th:href="@{/asistencia/asistencias(idActividad=${idActividad})}"
+										class="btn btn-sm btn-outline-secondary">Limpiar</a>
+								</div>
+							</form>
+
+							<div class="table-responsive">
+								<table class="table table-bordered table-hover mb-0">
+									<thead>
+										<tr>
+											<th class="text-center">Sesión</th>
+											<th>Fecha</th>
+											<th>Alumno</th>
+											<th>N° Control</th>
+											<th class="text-center">Asistió</th>
+											<th>Observaciones</th>
+											<th class="text-center">Operaciones</th>
+										</tr>
+									</thead>
+									<tbody>
+										<tr th:if="${#lists.isEmpty(asistencias)}">
+											<td colspan="7" class="text-center text-muted py-3">
+												No se encontraron registros con los filtros seleccionados.
+											</td>
+										</tr>
+										<tr th:each="a : ${asistencias}">
+											<td class="text-center fw-semibold"
+												th:text="${'#' + a.sesion.numeroSesion}"></td>
+											<td th:text="${a.sesion.fecha}"></td>
+											<td th:text="${a.alumno.persona.nombre + ' ' + a.alumno.persona.apellido}"></td>
+											<td th:text="${a.alumno.numControl}"></td>
+											<td class="text-center">
+												<span th:if="${a.asistio}" class="badge text-bg-success">
+													<i class="bi bi-check-lg me-1"></i>Sí
+												</span>
+												<span th:unless="${a.asistio}" class="badge text-bg-danger">
+													<i class="bi bi-x-lg me-1"></i>No
+												</span>
+											</td>
+											<td style="font-size:13px;">
+												<span th:if="${a.observaciones != null and a.observaciones != ''}"
+													th:text="${a.observaciones}"></span>
+												<span th:unless="${a.observaciones != null and a.observaciones != ''}"
+													class="text-muted">—</span>
+											</td>
+											<td class="text-center">
+												<div class="d-flex justify-content-center gap-1">
+													<a class="btn btn-ver btn-sm"
+														th:href="@{/asistencia/ver/{id}(id=${a.id})}"
+														title="Ver detalle">
+														<i class="bi bi-eye"></i>
+													</a>
+													<a class="btn btn-editar btn-sm"
+														th:href="@{/asistencia/editar/{id}(id=${a.id})}"
+														title="Editar">
+														<i class="bi bi-pencil"></i>
+													</a>
+													<button class="btn btn-eliminar btn-sm"
+														data-bs-toggle="modal" data-bs-target="#modalEliminar"
+														th:attr="data-id=${a.id}, data-nombre=${a.alumno.persona.nombre + ' ' + a.alumno.persona.apellido + ' — Sesión #' + a.sesion.numeroSesion}"
+														onclick="prepararEliminar(this)"
+														title="Eliminar">
+														<i class="bi bi-trash"></i>
+													</button>
+												</div>
+											</td>
+										</tr>
+									</tbody>
+								</table>
+							</div>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+		<!-- Modal eliminar -->
+		<div class="modal fade" id="modalEliminar" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">
+							<i class="fas fa-exclamation-triangle text-warning me-2"></i>
+							Confirmar eliminación
+						</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body" style="font-size:14px;">
+						¿Eliminar el registro de asistencia de <strong id="nombreEliminar"></strong>?
+						<br>
+						<span style="font-size:12px;color:var(--tecnm-gris);">Esta acción no se puede deshacer.</span>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+							<i class="fas fa-times me-1"></i> Cancelar
+						</button>
+						<a id="btnConfirmarEliminar" href="#" class="btn btn-eliminar">
+							<i class="fas fa-trash me-1"></i> Sí, eliminar
+						</a>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			function prepararEliminar(btn) {
+				document.getElementById('nombreEliminar').textContent = btn.getAttribute('data-nombre');
+				document.getElementById('btnConfirmarEliminar').href =
+					'/asistencia/eliminar/' + btn.getAttribute('data-id');
+			}
+		</script>
+	</main>
+	<footer th:replace="~{fragmento/fragmento :: footer}"></footer>
+	<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+</body>
+
+</html>

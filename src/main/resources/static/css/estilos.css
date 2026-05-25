@@ -1,0 +1,266 @@
+/* ═══════════════════════════════════════════════════════
+   estilos.css — Actividades Complementarias
+   IT Chilpancingo · TecNM
+   Paleta oficial: Pantone 294 C (#003087)
+═══════════════════════════════════════════════════════ */
+
+/* ── Variables ────────────────────────────────────────── */
+:root {
+    --tecnm-azul:   #003087;
+    --tecnm-azul2:  #002070;
+    --tecnm-gris:   #63666A;
+    --tecnm-plata:  #8A8D8F;
+    --tecnm-claro:  #F4F6F8;
+    --btn-ver:      #22B14C;
+    --btn-editar:   #FF9600;
+    --btn-eliminar: #E83224;
+}
+
+/* ── Base ─────────────────────────────────────────────── */
+body {
+    background: var(--tecnm-claro);
+    font-size: 14px;
+    color: #333;
+}
+
+/* ── Header ───────────────────────────────────────────── */
+.header {
+    background: var(--tecnm-azul);
+}
+
+.navbar-brand-text {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: .3px;
+}
+
+.navbar-sub {
+    font-size: 11px;
+    color: rgba(255, 255, 255, .65);
+}
+
+/* ── Navegación ───────────────────────────────────────── */
+.nav-link-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255, 255, 255, .88);
+    font-size: 13px;
+    padding: 6px 10px;
+    border-radius: 5px;
+    transition: background .15s;
+    cursor: pointer;
+}
+
+.nav-link-btn:hover {
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
+}
+
+.dropdown-menu {
+    background: var(--tecnm-azul);
+    border: 1px solid rgba(255, 255, 255, .15);
+    min-width: 210px;
+}
+
+.dropdown-item {
+    color: rgba(255, 255, 255, .85);
+    font-size: 13px;
+    padding: 7px 14px;
+}
+
+.dropdown-item:hover {
+    background: rgba(255, 255, 255, .12);
+    color: #fff;
+}
+
+.dropdown-divider {
+    border-color: rgba(255, 255, 255, .15);
+}
+
+/* ── Usuario badge ────────────────────────────────────── */
+.user-badge {
+    background: rgba(255, 255, 255, .12);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 12px;
+    color: #fff;
+}
+
+.rol-badge {
+    font-size: 10px;
+    color: rgba(255, 255, 255, .6);
+    display: block;
+    text-align: right;
+}
+
+/* ── Card ─────────────────────────────────────────────── */
+.card {
+    border: 1px solid #d6dce8;
+    border-radius: 10px;
+}
+
+.card-header-custom {
+    background: var(--tecnm-azul);
+    color: #fff;
+    border-radius: 10px 10px 0 0;
+    padding: 10px 16px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* ── Tabla ────────────────────────────────────────────── */
+.table th {
+    background: var(--tecnm-azul) !important;
+    color: #fff !important;
+    font-size: 13px;
+    vertical-align: middle;
+    text-align: center;
+}
+
+.table td {
+    font-size: 13px;
+    vertical-align: middle;
+}
+
+.table-hover tbody tr:hover {
+    background: #e8eef7;
+}
+
+/* ── Botones de operación ─────────────────────────────── */
+.btn-ver {
+    background: var(--btn-ver);
+    color: #fff;
+    border: none;
+}
+
+.btn-editar {
+    background: var(--btn-editar);
+    color: #fff;
+    border: none;
+}
+
+.btn-eliminar {
+    background: var(--btn-eliminar);
+    color: #fff;
+    border: none;
+}
+
+.btn-ver:hover,
+.btn-editar:hover,
+.btn-eliminar:hover {
+    background: var(--tecnm-azul);
+    color: #fff;
+}
+
+/* ── Botón primario (guardar) ─────────────────────────── */
+.btn-guardar {
+    background: var(--tecnm-azul);
+    border: none;
+    color: #fff;
+    font-size: 13px;
+    padding: 8px 24px;
+}
+
+.btn-guardar:hover {
+    background: var(--tecnm-azul2);
+    color: #fff;
+}
+
+/* ── Formulario ───────────────────────────────────────── */
+.form-label {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--tecnm-gris);
+    margin-bottom: 3px;
+}
+
+.form-control,
+.form-select {
+    font-size: 13px;
+}
+
+.form-control:focus,
+.form-select:focus {
+    border-color: var(--tecnm-azul);
+    box-shadow: 0 0 0 3px rgba(0, 48, 135, .12);
+}
+
+.form-control[readonly] {
+    background: #f0f3f8;
+    color: var(--tecnm-gris);
+}
+
+.section-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--tecnm-azul);
+    text-transform: uppercase;
+    letter-spacing: .5px;
+    margin-bottom: 10px;
+    margin-top: 6px;
+}
+
+/* ── Detalle ──────────────────────────────────────────── */
+.detalle-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--tecnm-gris);
+    text-transform: uppercase;
+    letter-spacing: .4px;
+    margin-bottom: 2px;
+}
+
+.detalle-valor {
+    font-size: 14px;
+    color: #222;
+    font-weight: 500;
+}
+
+.detalle-row {
+    padding: 10px 0;
+    border-bottom: 1px solid #eef0f4;
+}
+
+.detalle-row:last-child {
+    border-bottom: none;
+}
+
+.avatar-circle {
+    width: 64px;
+    height: 64px;
+    background: var(--tecnm-azul);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #fff;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+/* ── Buscador ─────────────────────────────────────────── */
+.search-bar {
+    max-width: 400px;
+}
+
+/* ── Mensajes flash ───────────────────────────────────── */
+.alert {
+    font-size: 13px;
+}
+
+/* ── Imagen thumbnail ─────────────────────────────────── */
+.img-actividad {
+    width: 80px;
+    height: 80px;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 1px solid #d6dce8;
+}
+
+/* ── Footer ───────────────────────────────────────────── */
+footer {
+    background: var(--tecnm-azul);
+    color: rgba(255, 255, 255, .75);
+    font-size: 12px;
+}

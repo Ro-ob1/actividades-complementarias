@@ -1,0 +1,347 @@
+﻿<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Sesiones</title>
+	<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<link rel="stylesheet" th:href="@{/css/estilos.css}">
+	<style>
+		.toolbar-bulk {
+			background: #f8f9fa;
+			border: 1px solid #dee2e6;
+			border-radius: 6px;
+			padding: 8px 14px;
+			display: none;
+			align-items: center;
+			gap: 12px;
+			margin-bottom: 10px;
+		}
+		.toolbar-bulk.visible { display: flex; }
+		tr.cancelada-row { opacity: .55; }
+	</style>
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+	<header th:replace="~{fragmento/fragmento :: main-header}"></header>
+	<main class="container flex-grow-1 my-4">
+		<div class="row justify-content-center">
+			<div class="col-md-11">
+
+				<div th:if="${msg != null and #strings.startsWith(msg, '⚠')}"
+					class="alert alert-danger alert-dismissible fade show" role="alert">
+					<i class="fas fa-exclamation-circle me-1"></i>
+					<span th:text="${msg}"></span>
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+				<div th:if="${msg != null and !#strings.startsWith(msg, '⚠')}"
+					class="alert alert-success alert-dismissible fade show" role="alert">
+					<i class="fas fa-check-circle me-1"></i>
+					<span th:text="${msg}"></span>
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+
+				<!-- ===== VISTA: tarjetas por actividad ===== -->
+				<div th:if="${idActividad == null}">
+					<div class="card shadow-sm">
+						<div class="card-header-custom">
+							<i class="fas fa-calendar-day me-2"></i>Sesiones por actividad
+						</div>
+						<div class="card-body">
+							<div th:if="${resumenes == null or #lists.isEmpty(resumenes)}"
+								class="text-center text-muted py-4">
+								<i class="fas fa-info-circle me-1"></i>
+								No hay actividades con sesiones generadas. Crea horarios para generar sesiones automáticamente.
+							</div>
+							<div th:if="${resumenes != null and !#lists.isEmpty(resumenes)}" class="row g-3">
+								<div th:each="r : ${resumenes}" class="col-md-4">
+									<div class="card h-100 shadow-sm">
+										<div class="card-body">
+											<h6 class="fw-semibold mb-3" th:text="${r.actividad.nombre}"></h6>
+											<div class="mb-2" style="font-size:12px;">
+												<div class="d-flex justify-content-between mb-1">
+													<span class="text-muted">Progreso</span>
+													<span th:text="${r.sesionesRealizadas + '/' + r.totalSesiones}"></span>
+												</div>
+												<div class="progress" style="height:8px;">
+													<div class="progress-bar bg-success"
+														th:style="'width:' + ${r.totalSesiones > 0 ? (r.sesionesRealizadas * 100 / r.totalSesiones) : 0} + '%'">
+													</div>
+												</div>
+											</div>
+											<div class="d-flex gap-1 flex-wrap mb-3">
+												<span class="badge bg-success" th:text="${r.sesionesRealizadas + ' realizadas'}"></span>
+												<span class="badge bg-primary" th:text="${r.sesionesProgramadas + ' programadas'}"></span>
+												<span th:if="${r.sesionesCanceladas > 0}"
+													class="badge bg-secondary" th:text="${r.sesionesCanceladas + ' canceladas'}"></span>
+											</div>
+											<div class="d-flex gap-2">
+												<a th:href="@{/sesion/sesiones(idActividad=${r.actividad.id})}"
+													class="btn btn-ver btn-sm flex-grow-1">
+													<i class="bi bi-list-ul me-1"></i> Ver sesiones
+												</a>
+												<a th:href="@{/sesion/reporte/{id}(id=${r.actividad.id})}"
+													class="btn btn-outline-secondary btn-sm" title="Reporte de asistencia">
+													<i class="bi bi-bar-chart"></i>
+												</a>
+											</div>
+										</div>
+									</div>
+								</div>
+							</div>
+						</div>
+					</div>
+				</div>
+
+				<!-- ===== VISTA: sesiones de una actividad con checkboxes ===== -->
+				<div th:if="${idActividad != null}">
+					<div class="card shadow-sm">
+						<div class="card-header-custom d-flex align-items-center justify-content-between">
+							<span>
+								<i class="fas fa-calendar-day me-2"></i>
+								Sesiones — <span th:text="${actividadSeleccionada.nombre}"></span>
+							</span>
+							<div class="d-flex gap-2">
+								<a th:href="@{/sesion/reporte/{id}(id=${actividadSeleccionada.id})}"
+									class="btn btn-light btn-sm">
+									<i class="bi bi-bar-chart me-1"></i> Reporte
+								</a>
+								<a th:href="@{/sesion/sesiones}" class="btn btn-light btn-sm">
+									<i class="bi bi-arrow-left me-1"></i> Actividades
+								</a>
+							</div>
+						</div>
+						<div class="card-body">
+							<!-- Filtro por fecha -->
+							<form th:action="@{/sesion/sesiones}" method="get"
+								class="d-flex gap-2 mb-3 align-items-end flex-wrap">
+								<input type="hidden" name="idActividad" th:value="${idActividad}">
+								<div>
+									<label class="form-label mb-1" style="font-size:12px;">Desde</label>
+									<input type="date" name="fechaDesde" class="form-control form-control-sm"
+										style="max-width:160px;" th:value="${fechaDesde}">
+								</div>
+								<div>
+									<label class="form-label mb-1" style="font-size:12px;">Hasta</label>
+									<input type="date" name="fechaHasta" class="form-control form-control-sm"
+										style="max-width:160px;" th:value="${fechaHasta}">
+								</div>
+								<div class="d-flex gap-2 align-self-end">
+									<button class="btn btn-sm btn-guardar">
+										<i class="bi bi-search"></i> Filtrar
+									</button>
+									<a th:href="@{/sesion/sesiones(idActividad=${idActividad})}"
+										class="btn btn-sm btn-outline-secondary">Limpiar</a>
+								</div>
+							</form>
+
+							<form th:action="@{/sesion/bulkAccion}" method="post" id="formBulk">
+								<input type="hidden" name="idActividad" th:value="${idActividad}">
+								<input type="hidden" name="accion"      id="accionBulk" value="">
+
+								<!-- Barra de acciones masivas -->
+								<div sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')" class="toolbar-bulk" id="toolbarBulk">
+									<span class="text-muted me-1" style="font-size:13px;">
+										<strong id="countSel">0</strong> seleccionada(s)
+									</span>
+									<button type="button" class="btn btn-sm btn-eliminar"
+										data-bs-toggle="modal" data-bs-target="#modalCancelarBulk">
+										<i class="bi bi-x-circle me-1"></i> Cancelar
+									</button>
+									<button type="button" class="btn btn-sm btn-outline-success"
+										data-bs-toggle="modal" data-bs-target="#modalReactivarBulk">
+										<i class="bi bi-arrow-counterclockwise me-1"></i> Reactivar
+									</button>
+									<button type="button" class="btn btn-sm btn-outline-secondary ms-auto"
+										onclick="desmarcarTodos()">
+										<i class="bi bi-x me-1"></i> Limpiar selección
+									</button>
+								</div>
+
+								<div class="table-responsive">
+									<table class="table table-bordered table-hover mb-0">
+										<caption sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')" class="text-muted pb-1" style="font-size:11px; caption-side:top;">
+											<i class="bi bi-info-circle me-1"></i>
+											Selecciona sesiones con los checkboxes para cancelarlas o reactivarlas en grupo.
+										</caption>
+										<thead>
+											<tr>
+												<th sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')" style="width:40px;" class="text-center">
+													<input type="checkbox" id="checkAll" class="form-check-input"
+														style="width:16px;height:16px;" onchange="toggleTodos(this)">
+												</th>
+												<th class="text-center">No.</th>
+												<th>Día</th>
+												<th>Fecha</th>
+												<th>Hora</th>
+												<th>Espacio</th>
+												<th class="text-center">Estatus</th>
+												<th class="text-center">Lista</th>
+											</tr>
+										</thead>
+										<tbody>
+											<tr th:if="${#lists.isEmpty(sesiones)}">
+												<td colspan="8" class="text-center text-muted py-3">No hay sesiones.</td>
+											</tr>
+											<tr th:each="sesion : ${sesiones}"
+												th:classappend="${sesion.estatus == 'CANCELADA'} ? 'cancelada-row' : ''">
+												<td sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')" class="text-center">
+													<input type="checkbox" name="ids" th:value="${sesion.id}"
+														class="form-check-input chk-sesion"
+														style="width:16px;height:16px;"
+														onchange="actualizarToolbar()">
+												</td>
+												<td class="text-center" th:text="${sesion.numeroSesion}"></td>
+												<td th:text="${sesion.horario.diaSemana}"></td>
+												<td th:text="${sesion.fecha}"></td>
+												<td th:text="${#strings.substring(sesion.horario.horaInicio.toString(),0,5) + ' – ' + #strings.substring(sesion.horario.horaFin.toString(),0,5)}"></td>
+												<td th:text="${sesion.horario.espacio.nombre}"></td>
+												<td class="text-center">
+													<span th:if="${sesion.estatus == 'PROGRAMADA'}" class="badge bg-primary">Programada</span>
+													<span th:if="${sesion.estatus == 'REALIZADA'}"  class="badge bg-success">Realizada</span>
+													<span th:if="${sesion.estatus == 'CANCELADA'}"  class="badge bg-secondary">Cancelada</span>
+													<span th:if="${sesion.estatus == null}"          class="badge bg-light text-dark">—</span>
+												</td>
+												<td class="text-center">
+													<a th:if="${sesion.estatus == 'PROGRAMADA'}"
+														class="btn btn-guardar btn-sm"
+														th:href="@{/sesion/asistencia/{id}(id=${sesion.id})}"
+														title="Tomar lista">
+														<i class="bi bi-clipboard-check"></i>
+													</a>
+													<a th:if="${sesion.estatus == 'REALIZADA'}"
+														class="btn btn-editar btn-sm"
+														th:href="@{/sesion/asistencia/{id}(id=${sesion.id})}"
+														title="Ver / editar lista">
+														<i class="bi bi-clipboard-check"></i>
+													</a>
+													<a th:if="${sesion.estatus == 'CANCELADA'}"
+														class="btn btn-outline-secondary btn-sm disabled"
+														title="Sesión cancelada">
+														<i class="bi bi-clipboard-x"></i>
+													</a>
+													<!-- Botón rápido: marcar todos como asistieron -->
+													<button th:if="${sesion.estatus == 'PROGRAMADA'}"
+														type="button"
+														class="btn btn-outline-success btn-sm ms-1"
+														title="Marcar todos como asistieron (acceso rápido)"
+														th:attr="onclick='confirmarMarcarTodos(' + ${sesion.id} + ',' + ${sesion.numeroSesion} + ')'">
+														<i class="bi bi-check-all"></i>
+													</button>
+												</td>
+											</tr>
+										</tbody>
+									</table>
+								</div>
+							</form>
+
+							<!-- Form oculto para marcar todos asistieron -->
+							<form id="formMarcarTodos" method="post" th:action="@{/sesion/marcarTodosAsistieron}" style="display:none;">
+								<input type="hidden" id="marcarTodosIdSesion"    name="idSesion">
+								<input type="hidden" id="marcarTodosIdActividad" name="idActividad" th:value="${idActividad}">
+							</form>
+						</div>
+					</div>
+				</div>
+
+			</div>
+		</div>
+
+		<!-- Modal: confirmar cancelar seleccionadas -->
+		<div class="modal fade" id="modalCancelarBulk" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">
+							<i class="fas fa-exclamation-triangle text-warning me-2"></i>Cancelar sesiones
+						</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body" style="font-size:14px;">
+						¿Cancelar las <strong id="countCancelar">0</strong> sesión(es) seleccionadas?
+						<br><span class="text-muted" style="font-size:12px;">Podrás reactivarlas después si es necesario.</span>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+							<i class="fas fa-times me-1"></i> No
+						</button>
+						<button type="button" class="btn btn-eliminar" onclick="ejecutarBulk('CANCELAR')">
+							<i class="bi bi-x-circle me-1"></i> Sí, cancelar
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Modal: confirmar reactivar seleccionadas -->
+		<div class="modal fade" id="modalReactivarBulk" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">
+							<i class="bi bi-arrow-counterclockwise text-success me-2"></i>Reactivar sesiones
+						</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body" style="font-size:14px;">
+						¿Reactivar las <strong id="countReactivar">0</strong> sesión(es) seleccionadas?
+						<br><span class="text-muted" style="font-size:12px;">Volverán a quedar como PROGRAMADA.</span>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+							<i class="fas fa-times me-1"></i> No
+						</button>
+						<button type="button" class="btn btn-guardar" onclick="ejecutarBulk('REACTIVAR')">
+							<i class="bi bi-arrow-counterclockwise me-1"></i> Sí, reactivar
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+	</main>
+	<footer th:replace="~{fragmento/fragmento :: footer}"></footer>
+	<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+	<script>
+		function actualizarToolbar() {
+			const checked = document.querySelectorAll('.chk-sesion:checked');
+			const n = checked.length;
+			const toolbar = document.getElementById('toolbarBulk');
+			document.getElementById('countSel').textContent = n;
+			document.getElementById('countCancelar').textContent = n;
+			document.getElementById('countReactivar').textContent = n;
+			toolbar.classList.toggle('visible', n > 0);
+			document.getElementById('checkAll').indeterminate =
+				n > 0 && n < document.querySelectorAll('.chk-sesion').length;
+			document.getElementById('checkAll').checked =
+				n === document.querySelectorAll('.chk-sesion').length;
+		}
+
+		function toggleTodos(masterChk) {
+			document.querySelectorAll('.chk-sesion').forEach(c => c.checked = masterChk.checked);
+			actualizarToolbar();
+		}
+
+		function desmarcarTodos() {
+			document.querySelectorAll('.chk-sesion').forEach(c => c.checked = false);
+			document.getElementById('checkAll').checked = false;
+			actualizarToolbar();
+		}
+
+		function ejecutarBulk(accion) {
+			document.getElementById('accionBulk').value = accion;
+			document.getElementById('formBulk').submit();
+		}
+
+		function confirmarMarcarTodos(idSesion, numSesion) {
+			if (!confirm('¿Marcar la sesión #' + numSesion + ' como REALIZADA y registrar asistencia de todos los alumnos inscritos?\n\nEsta acción es útil para pruebas rápidas.')) return;
+			document.getElementById('marcarTodosIdSesion').value = idSesion;
+			document.getElementById('formMarcarTodos').submit();
+		}
+	</script>
+</body>
+
+</html>

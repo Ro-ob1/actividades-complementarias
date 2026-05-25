@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Formulario Inscripción</title>
+	<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+	<header th:replace="~{fragmento/fragmento :: main-header}"></header>
+	<main class="container flex-grow-1 my-4">
+		<div class="row justify-content-center">
+			<div class="col-md-7">
+
+				<!-- Alertas flash -->
+				<div th:if="${msg != null and #strings.startsWith(msg, '⚠')}"
+					class="alert alert-danger alert-dismissible fade show" role="alert">
+					<i class="fas fa-exclamation-circle me-1"></i>
+					<span th:text="${msg}"></span>
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+				<div th:if="${msg != null and !#strings.startsWith(msg, '⚠')}"
+					class="alert alert-success alert-dismissible fade show" role="alert">
+					<i class="fas fa-check-circle me-1"></i>
+					<span th:text="${msg}"></span>
+					<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+				</div>
+
+				<div class="card shadow-sm">
+					<div class="card-header-custom">
+						<i class="fas fa-file-signature me-2"></i>
+						<span th:text="${inscripcion.id != null} ? 'Editar inscripción' : 'Registrar inscripción'"></span>
+					</div>
+					<div class="card-body p-4">
+						<form th:action="@{/inscripcion/guardar}" method="post"
+							th:object="${inscripcion}" enctype="multipart/form-data">
+
+							<input type="hidden" th:field="*{id}">
+							<input type="hidden" name="archivoActual" th:value="${inscripcion.archivoHorario}">
+							<!-- Solo enviar fechaSolicitud si ya existe (edición); en nuevo la pone el controller -->
+							<input th:if="${inscripcion.fechaSolicitud != null}"
+								type="hidden" name="fechaSolicitud" th:value="${inscripcion.fechaSolicitud}">
+
+							<!-- Alumno con autocomplete tipo sugerencias -->
+							<div class="mb-3">
+								<label class="form-label">Alumno <span class="text-danger">*</span></label>
+								<div class="position-relative">
+									<input type="text" id="inputAlumno" class="form-control form-control-sm"
+										placeholder="Escriba nombre, apellido o número de control..."
+										autocomplete="off"
+										th:value="${inscripcion.alumno != null ? inscripcion.alumno.persona.nombre + ' ' + inscripcion.alumno.persona.apellido + ' — ' + inscripcion.alumno.numControl : ''}">
+									<ul id="sugerenciasAlumno"
+										class="list-group position-absolute w-100 shadow-sm"
+										style="z-index:1000;max-height:220px;overflow-y:auto;display:none;top:100%;left:0;font-size:13px;"></ul>
+								</div>
+								<input type="hidden" name="alumno.id" id="alumnoIdHidden"
+									th:value="${inscripcion.alumno != null ? inscripcion.alumno.id : ''}">
+								<div id="alumnoError" class="form-text text-danger d-none">
+									<i class="bi bi-exclamation-circle me-1"></i>Selecciona un alumno de la lista.
+								</div>
+							</div>
+
+							<!-- Actividad (solo activas del semestre activo, solo nombre) -->
+							<div class="mb-3">
+								<label class="form-label">Actividad <span class="text-danger">*</span></label>
+								<select class="form-select" name="actividad.id" required>
+									<option value="">— Seleccione —</option>
+									<option th:each="act : ${actividades}"
+										th:value="${act.id}"
+										th:text="${act.nombre}"
+										th:selected="${inscripcion.actividad != null and inscripcion.actividad.id == act.id}">
+									</option>
+								</select>
+							</div>
+
+							<!-- Encargado: auto-asignado en nueva, editable en edición -->
+							<div th:if="${inscripcion.id == null and encargadoAuto != null}" class="mb-3">
+								<label class="form-label">Encargado asignado</label>
+								<input type="hidden" name="encargado.id" th:value="${encargadoAuto.id}">
+								<input type="text" class="form-control" readonly
+									th:value="${encargadoAuto.persona.nombre + ' ' + encargadoAuto.persona.apellido}">
+								<div class="form-text">Se asigna automáticamente al primer encargado activo.</div>
+							</div>
+							<div th:if="${inscripcion.id != null}" class="mb-3">
+								<label class="form-label">Encargado</label>
+								<select class="form-select" name="encargado.id">
+									<option value="">— Sin asignar —</option>
+									<option th:each="e : ${encargados}"
+										th:value="${e.id}"
+										th:text="${e.persona.nombre + ' ' + e.persona.apellido}"
+										th:selected="${inscripcion.encargado != null and inscripcion.encargado.id == e.id}">
+									</option>
+								</select>
+							</div>
+
+							<!-- PDF horario -->
+							<div th:if="${inscripcion.archivoHorario != null}" class="mb-2">
+								<label class="form-label">Archivo actual</label>
+								<div>
+									<a th:href="@{/uploads/inscripcion/{pdf}(pdf=${inscripcion.archivoHorario})}"
+										target="_blank" class="btn btn-sm btn-outline-secondary">
+										<i class="fas fa-file-pdf me-1"></i> Ver PDF actual
+									</a>
+								</div>
+							</div>
+							<div class="mb-3">
+								<label class="form-label">
+									Horario académico (PDF)
+									<!-- Obligatorio en nueva inscripción o si no tiene PDF previo -->
+									<span th:if="${inscripcion.id == null or inscripcion.archivoHorario == null}"
+										class="text-danger">*</span>
+									<small th:if="${inscripcion.archivoHorario != null}"
+										class="text-muted">(opcional, reemplaza el actual)</small>
+								</label>
+								<input type="file" name="archivoHorarioPdf" id="inputPdf"
+									class="form-control" accept=".pdf"
+									th:required="${inscripcion.id == null or inscripcion.archivoHorario == null}"
+									onchange="validarPdf(this)">
+								<div class="form-text text-muted">
+									<i class="bi bi-info-circle me-1"></i>Solo archivos PDF. Tamaño máximo: <strong>10 MB</strong>.
+								</div>
+								<div id="alertaPdf" class="alert alert-warning py-1 px-2 mt-1 d-none" style="font-size:12px;">
+									<i class="bi bi-exclamation-triangle me-1"></i>
+									El archivo supera 10 MB. Por favor elige uno más pequeño.
+								</div>
+								<div id="alertaTipoPdf" class="alert alert-warning py-1 px-2 mt-1 d-none" style="font-size:12px;">
+									<i class="bi bi-exclamation-triangle me-1"></i>
+									Solo se permiten archivos PDF.
+								</div>
+								<div id="alertaPdfRequerido" class="alert alert-danger py-1 px-2 mt-1 d-none" style="font-size:12px;">
+									<i class="bi bi-exclamation-circle me-1"></i>
+									El horario académico en PDF es obligatorio.
+								</div>
+							</div>
+
+							<!-- Estatus solo en edición -->
+							<div th:if="${inscripcion.id != null}" class="mb-3">
+								<label class="form-label">Estatus</label>
+								<select class="form-select" name="estatusSolicitud">
+									<option value="PENDIENTE"  th:selected="${inscripcion.estatusSolicitud == 'PENDIENTE'}">Pendiente</option>
+									<option value="APROBADA"   th:selected="${inscripcion.estatusSolicitud == 'APROBADA'}">Aprobada</option>
+									<option value="RECHAZADA"  th:selected="${inscripcion.estatusSolicitud == 'RECHAZADA'}">Rechazada</option>
+								</select>
+							</div>
+
+							<div class="d-flex gap-2">
+								<button type="submit" class="btn btn-guardar" id="btnGuardar">
+									<i class="fas fa-save me-1"></i> Guardar
+								</button>
+								<a th:href="@{/inscripcion/inscripciones}" class="btn btn-outline-secondary">
+									<i class="fas fa-times me-1"></i> Cancelar
+								</a>
+							</div>
+						</form>
+					</div>
+				</div>
+			</div>
+		</div>
+	</main>
+	<footer th:replace="~{fragmento/fragmento :: footer}"></footer>
+	<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+	<script th:inline="javascript">
+		/*<![CDATA[*/
+
+		// Construir array de alumnos desde Thymeleaf
+		var todosAlumnos = [];
+		/*[# th:each="a : ${alumnos}"]*/
+		todosAlumnos.push({
+			id: String(/*[[${a.id}]]*/ 0),
+			texto: /*[[${a.persona.nombre + ' ' + a.persona.apellido + ' — ' + a.numControl}]]*/ ''
+		});
+		/*[/]*/
+
+		// --- Autocomplete alumno ---
+		(function () {
+			const input  = document.getElementById('inputAlumno');
+			const lista  = document.getElementById('sugerenciasAlumno');
+			const hidden = document.getElementById('alumnoIdHidden');
+			const error  = document.getElementById('alumnoError');
+
+			input.addEventListener('input', function () {
+				const q = this.value.toLowerCase().trim();
+				hidden.value = '';
+				error.classList.add('d-none');
+
+				if (q.length < 1) { lista.style.display = 'none'; return; }
+
+				const coincidentes = todosAlumnos.filter(a =>
+					a.texto.toLowerCase().includes(q)
+				).slice(0, 10);
+
+				lista.innerHTML = '';
+				if (!coincidentes.length) { lista.style.display = 'none'; return; }
+
+				coincidentes.forEach(a => {
+					const li = document.createElement('li');
+					li.className = 'list-group-item list-group-item-action py-1 px-2';
+					li.style.cursor = 'pointer';
+					li.textContent = a.texto;
+					li.addEventListener('mousedown', function () {
+						input.value = a.texto;
+						hidden.value = a.id;
+						lista.style.display = 'none';
+						error.classList.add('d-none');
+					});
+					lista.appendChild(li);
+				});
+				lista.style.display = 'block';
+			});
+
+			input.addEventListener('blur', function () {
+				setTimeout(() => lista.style.display = 'none', 150);
+			});
+		})();
+
+		// Validar PDF: tipo y tamaño
+		function validarPdf(input) {
+			const alertaTamano    = document.getElementById('alertaPdf');
+			const alertaTipo      = document.getElementById('alertaTipoPdf');
+			const alertaRequerido = document.getElementById('alertaPdfRequerido');
+			const btn             = document.getElementById('btnGuardar');
+
+			alertaTamano.classList.add('d-none');
+			alertaTipo.classList.add('d-none');
+			alertaRequerido.classList.add('d-none');
+			input.classList.remove('is-invalid');
+			btn.disabled = false;
+
+			if (!input.files[0]) return;
+
+			const archivo = input.files[0];
+			if (!archivo.name.toLowerCase().endsWith('.pdf') || archivo.type !== 'application/pdf') {
+				alertaTipo.classList.remove('d-none');
+				btn.disabled = true;
+				input.value = '';
+				return;
+			}
+			if (archivo.size > 10 * 1024 * 1024) {
+				alertaTamano.classList.remove('d-none');
+				btn.disabled = true;
+			}
+		}
+
+		// Validar alumno y PDF al enviar
+		document.querySelector('form').addEventListener('submit', function (e) {
+			let bloqueado = false;
+
+			// Validar alumno seleccionado
+			const alumnoHidden = document.getElementById('alumnoIdHidden');
+			const alumnoError  = document.getElementById('alumnoError');
+			if (!alumnoHidden.value) {
+				alumnoError.classList.remove('d-none');
+				document.getElementById('inputAlumno').focus();
+				bloqueado = true;
+			}
+
+			const inputPdf      = document.getElementById('inputPdf');
+			const alertaTamano  = document.getElementById('alertaPdf');
+			const alertaTipo    = document.getElementById('alertaTipoPdf');
+
+			const alertaRequerido = document.getElementById('alertaPdfRequerido');
+
+			// Validar PDF obligatorio cuando el campo lo requiere
+			if (inputPdf.required && inputPdf.files.length === 0) {
+				alertaTipo.classList.add('d-none');
+				alertaTamano.classList.add('d-none');
+				alertaRequerido.classList.remove('d-none');
+				inputPdf.classList.add('is-invalid');
+				bloqueado = true;
+			} else if (inputPdf.files[0]) {
+				inputPdf.classList.remove('is-invalid');
+				const f = inputPdf.files[0];
+				if (!f.name.toLowerCase().endsWith('.pdf') || f.type !== 'application/pdf') {
+					alertaTipo.classList.remove('d-none');
+					bloqueado = true;
+				} else if (f.size > 10 * 1024 * 1024) {
+					alertaTamano.classList.remove('d-none');
+					bloqueado = true;
+				}
+			}
+
+			if (bloqueado) e.preventDefault();
+		});
+		/*]]>*/
+	</script>
+</body>
+
+</html>

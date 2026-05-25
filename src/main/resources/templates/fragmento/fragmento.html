@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Fragmento</title>
+	<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<link rel="stylesheet" th:href="@{/css/estilos.css}">
+</head>
+
+<body>
+
+	<header th:fragment="main-header" class="header text-white">
+		<div class="container-fluid px-3 py-2 d-flex align-items-center justify-content-between flex-wrap gap-2">
+			<a th:href="@{/}" class="d-flex align-items-center gap-2 text-decoration-none text-white">
+				<img th:src="@{/images/itch.jpg}" height="52" width="52" class="rounded"
+					onerror="this.style.display='none'">
+				<div>
+					<div class="navbar-brand-text">Actividades Complementarias</div>
+					<div class="navbar-sub">IT Chilpancingo — TecNM</div>
+				</div>
+			</a>
+			<div sec:authorize="isAuthenticated()" class="d-flex align-items-center gap-2">
+				<div class="user-badge">
+					<i class="fas fa-user-circle me-1"></i>
+					<span sec:authentication="name"></span>
+					<span class="rol-badge" sec:authentication="principal.authorities"></span>
+				</div>
+			</div>
+		</div>
+
+		<nav class="border-top border-white border-opacity-25 px-3 py-1 d-flex flex-wrap gap-1 align-items-center">
+
+			<!-- Inicio -->
+			<a th:href="@{/}" class="nav-link-btn">
+				<i class="fas fa-home me-1"></i> Inicio
+			</a>
+
+			<!-- CATÁLOGOS (solo ADMIN) -->
+			<div class="btn-group" sec:authorize="hasRole('ROLE_ADMIN')">
+				<button type="button" class="nav-link-btn dropdown-toggle" data-bs-toggle="dropdown">
+					<i class="fas fa-book me-1"></i> Catálogos
+				</button>
+				<ul class="dropdown-menu">
+					<li><a class="dropdown-item" th:href="@{/carrera/carreras}"><i class="fas fa-graduation-cap me-2"></i>Carreras</a></li>
+					<li><a class="dropdown-item" th:href="@{/disciplina/disciplinas}"><i class="fas fa-dumbbell me-2"></i>Disciplinas</a></li>
+					<li><a class="dropdown-item" th:href="@{/espacio/espacios}"><i class="fas fa-map-marker-alt me-2"></i>Espacios</a></li>
+					<li><a class="dropdown-item" th:href="@{/nivelDesempenio/niveles}"><i class="fas fa-star me-2"></i>Niveles de desempeño</a></li>
+					<li><a class="dropdown-item" th:href="@{/criterioBase/criterios}"><i class="fas fa-clipboard-list me-2"></i>Criterios de evaluación</a></li>
+				</ul>
+			</div>
+
+			<!-- SEMESTRES (solo ADMIN) -->
+			<div class="btn-group" sec:authorize="hasRole('ROLE_ADMIN')">
+				<button type="button" class="nav-link-btn dropdown-toggle" data-bs-toggle="dropdown">
+					<i class="fas fa-calendar-alt me-1"></i> Semestres
+				</button>
+				<ul class="dropdown-menu">
+					<li><a class="dropdown-item" th:href="@{/semestre/semestres}"><i class="fas fa-list me-2"></i>Ver semestres</a></li>
+					<li><a class="dropdown-item" th:href="@{/semestre/nuevo}"><i class="fas fa-plus me-2"></i>Nuevo semestre</a></li>
+				</ul>
+			</div>
+
+			<!-- PERSONAS (solo ADMIN) -->
+			<div class="btn-group" sec:authorize="hasRole('ROLE_ADMIN')">
+				<button type="button" class="nav-link-btn dropdown-toggle" data-bs-toggle="dropdown">
+					<i class="fas fa-id-card me-1"></i> Personas
+				</button>
+				<ul class="dropdown-menu">
+					<li><a class="dropdown-item" th:href="@{/alumno/alumnos}"><i class="fas fa-user-graduate me-2"></i>Alumnos</a></li>
+					<li><a class="dropdown-item" th:href="@{/instructor/instructores}"><i class="fas fa-chalkboard-teacher me-2"></i>Instructores</a></li>
+					<li><a class="dropdown-item" th:href="@{/encargado/encargados}"><i class="fas fa-user-tie me-2"></i>Encargados</a></li>
+					<li><hr class="dropdown-divider"></li>
+					<li><a class="dropdown-item" th:href="@{/usuario/usuarios}"><i class="fas fa-key me-2"></i>Usuarios</a></li>
+				</ul>
+			</div>
+
+			<!-- ACTIVIDADES (ADMIN y ENCARGADO) -->
+			<div class="btn-group" sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')">
+				<button type="button" class="nav-link-btn dropdown-toggle" data-bs-toggle="dropdown">
+					<i class="fas fa-running me-1"></i> Actividades
+				</button>
+				<ul class="dropdown-menu">
+					<li><a class="dropdown-item" th:href="@{/actividad/actividades}"><i class="fas fa-list me-2"></i>Ver actividades</a></li>
+					<li><a class="dropdown-item" th:href="@{/actividad/nuevo}"><i class="fas fa-plus me-2"></i>Nueva actividad</a></li>
+					<li><hr class="dropdown-divider"></li>
+					<li><a class="dropdown-item" th:href="@{/horario/horarios}"><i class="fas fa-clock me-2"></i>Horarios</a></li>
+					<li><a class="dropdown-item" th:href="@{/sesion/sesiones}"><i class="fas fa-calendar-day me-2"></i>Sesiones</a></li>
+				</ul>
+			</div>
+
+			<!-- INSCRIPCIONES (ADMIN y ENCARGADO) -->
+			<div class="btn-group" sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')">
+				<button type="button" class="nav-link-btn dropdown-toggle" data-bs-toggle="dropdown">
+					<i class="fas fa-file-signature me-1"></i> Inscripciones
+				</button>
+				<ul class="dropdown-menu">
+					<li><a class="dropdown-item" th:href="@{/inscripcion/inscripciones}"><i class="fas fa-list me-2"></i>Ver inscripciones</a></li>
+					<li sec:authorize="hasRole('ROLE_ADMIN')">
+						<a class="dropdown-item" th:href="@{/inscripcion/nuevo}"><i class="fas fa-plus me-2"></i>Nueva inscripción</a></li>
+				</ul>
+			</div>
+
+			<!-- EVALUACIONES + CONSTANCIAS (ADMIN y ENCARGADO) -->
+			<div class="btn-group" sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')">
+				<button type="button" class="nav-link-btn dropdown-toggle" data-bs-toggle="dropdown">
+					<i class="fas fa-star me-1"></i> Evaluaciones
+				</button>
+				<ul class="dropdown-menu">
+					<li><a class="dropdown-item" th:href="@{/asistencia/asistencias}">
+						<i class="fas fa-clipboard-check me-2"></i>Asistencias</a></li>
+					<li><a class="dropdown-item" th:href="@{/evaluacion/evaluaciones}">
+						<i class="fas fa-star-half-alt me-2"></i>Evaluaciones</a></li>
+					<li><hr class="dropdown-divider"></li>
+					<li><a class="dropdown-item" th:href="@{/constancia/constancias}">
+						<i class="fas fa-certificate me-2"></i>Constancias</a></li>
+				</ul>
+			</div>
+
+			<!-- MI ÁREA (solo INSTRUCTOR) -->
+			<div class="btn-group" sec:authorize="hasRole('ROLE_INSTRUCTOR')">
+				<button type="button" class="nav-link-btn dropdown-toggle" data-bs-toggle="dropdown">
+					<i class="fas fa-chalkboard-teacher me-1"></i> Mi área
+				</button>
+				<ul class="dropdown-menu">
+					<li><a class="dropdown-item" th:href="@{/actividad/actividades}">
+						<i class="fas fa-running me-2"></i>Ver actividades</a></li>
+					<li><a class="dropdown-item" th:href="@{/sesion/sesiones}">
+						<i class="fas fa-calendar-day me-2"></i>Sesiones</a></li>
+					<li><hr class="dropdown-divider"></li>
+					<li><a class="dropdown-item" th:href="@{/evaluacion/evaluaciones}">
+						<i class="fas fa-star-half-alt me-2"></i>Evaluaciones</a></li>
+					<li><a class="dropdown-item" th:href="@{/constancia/constancias}">
+						<i class="fas fa-certificate me-2"></i>Constancias</a></li>
+				</ul>
+			</div>
+
+			<!-- MIS ACTIVIDADES (solo ALUMNO) -->
+			<div class="btn-group" sec:authorize="hasRole('ROLE_ALUMNO')">
+				<button type="button" class="nav-link-btn dropdown-toggle" data-bs-toggle="dropdown">
+					<i class="fas fa-running me-1"></i> Mis actividades
+				</button>
+				<ul class="dropdown-menu">
+					<li><a class="dropdown-item" th:href="@{/alumno/inicio}"><i class="fas fa-home me-2"></i>Mi panel</a></li>
+					<li><a class="dropdown-item" th:href="@{/alumno/catalogo}"><i class="fas fa-list me-2"></i>Ver catálogo</a></li>
+					<li><a class="dropdown-item" th:href="@{/constancia/constancias}"><i class="fas fa-certificate me-2"></i>Mis constancias</a></li>
+				</ul>
+			</div>
+
+			<!-- Salir -->
+			<form th:action="@{/logout}" method="post" class="ms-auto" sec:authorize="isAuthenticated()">
+				<button type="submit" class="nav-link-btn" style="color:#ff8080;">
+					<i class="fas fa-sign-out-alt me-1"></i> Salir
+				</button>
+			</form>
+
+			<!-- Login -->
+			<a th:href="@{/login}" class="nav-link-btn ms-auto" sec:authorize="!isAuthenticated()" style="color:#90EE90;">
+				<i class="fas fa-sign-in-alt me-1"></i> Iniciar sesión
+			</a>
+		</nav>
+	</header>
+
+	<footer th:fragment="footer" class="text-center py-3 mt-auto">
+		<small>© 2026 IT Chilpancingo — TecNM · Actividades Complementarias</small>
+	</footer>
+
+</body>
+
+</html>
