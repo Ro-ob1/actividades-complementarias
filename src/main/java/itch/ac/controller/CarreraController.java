@@ -83,11 +83,15 @@ public class CarreraController {
 
 	@GetMapping("/eliminar/{id}")
 	public String eliminar(@PathVariable Integer id, RedirectAttributes attributes) {
-		Carrera carrera = carreraService.eliminarPorId(id);
-		if (carrera == null) {
-			attributes.addFlashAttribute("msg", "No se pudo eliminar la carrera.");
-		} else {
-			attributes.addFlashAttribute("msg", "Carrera eliminada correctamente.");
+		try {
+			Carrera carrera = carreraService.eliminarPorId(id);
+			if (carrera == null) {
+				attributes.addFlashAttribute("msg", "⚠ No se encontró la carrera.");
+			} else {
+				attributes.addFlashAttribute("msg", "Carrera eliminada correctamente.");
+			}
+		} catch (org.springframework.dao.DataIntegrityViolationException e) {
+			attributes.addFlashAttribute("msg", "⚠ No se puede eliminar: hay alumnos registrados en esta carrera.");
 		}
 		return "redirect:/carrera/carreras";
 	}

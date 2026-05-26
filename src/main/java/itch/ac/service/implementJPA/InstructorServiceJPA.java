@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 
 import itch.ac.model.Instructor;
 import itch.ac.model.Persona;
+import itch.ac.model.Usuario;
 import itch.ac.repository.InstructorRepository;
+import itch.ac.repository.UsuarioRepository;
 import itch.ac.service.IInstructorService;
 
 @Primary
@@ -18,6 +20,9 @@ public class InstructorServiceJPA implements IInstructorService {
 
 	@Autowired
 	private InstructorRepository instructorRepository;
+
+	@Autowired
+	private UsuarioRepository usuarioRepository;
 
 	@Override
 	public List<Instructor> buscarTodosInstructores() {
@@ -50,6 +55,11 @@ public class InstructorServiceJPA implements IInstructorService {
 			Instructor instructor = optional.get();
 			instructor.setActivo(0);
 			instructorRepository.save(instructor);
+			Usuario usuario = usuarioRepository.findByPersona(instructor.getPersona());
+			if (usuario != null && !"ROLE_ADMIN".equals(usuario.getRol())) {
+				usuario.setActivo(0);
+				usuarioRepository.save(usuario);
+			}
 			return instructor;
 		}
 		return null;

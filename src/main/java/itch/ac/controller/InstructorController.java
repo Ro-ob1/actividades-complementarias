@@ -29,6 +29,8 @@ import itch.ac.model.Inscripcion;
 import itch.ac.model.Instructor;
 import itch.ac.model.Persona;
 import itch.ac.model.Sesion;
+import itch.ac.model.Actividad;
+import itch.ac.service.IActividadService;
 import itch.ac.service.IAsistenciaService;
 import itch.ac.service.IDisciplinaService;
 import itch.ac.service.IInscripcionService;
@@ -66,8 +68,11 @@ public class InstructorController {
 	@Autowired
 	private IAsistenciaService asistenciaService;
 
-	@Value("${app.upload.dir:/uploads}")
-	private String uploadDir;
+	@Autowired
+	private IActividadService actividadService;
+
+	@Value("${upload.path}")
+	private String uploadPath;
 
 	@GetMapping("/inicio")
 	public String inicio(Authentication auth, Model model) {
@@ -75,13 +80,25 @@ public class InstructorController {
 		var usuario = usuarioService.buscarPorUsername(auth.getName());
 		List<Map<String, Object>> sesionesData = new java.util.ArrayList<>();
 
+		List<Actividad> misActividades = new java.util.ArrayList<>();
+		Integer miInstructorId = null;
+
 		if (usuario != null) {
+			Integer personaId = usuario.getPersona().getId();
+
+			miInstructorId = instructorService.buscarInstructoresActivos().stream()
+				.filter(i -> i.getPersona().getId().equals(personaId))
+				.findFirst()
+				.map(i -> i.getId())
+				.orElse(null);
+
 			List<Sesion> todasHoy = sesionService.buscarSesionesPorFecha(LocalDate.now());
 
 			List<Sesion> sesionesHoy = todasHoy.stream()
 				.filter(s -> s.getHorario().getActividad()
 							  .getInstructor().getPersona().getId()
-							  .equals(usuario.getPersona().getId()))
+							  .equals(personaId)
+						  && !"REALIZADA".equals(s.getEstatus()))
 				.toList();
 
 			for (Sesion sesion : sesionesHoy) {
@@ -109,22 +126,43 @@ public class InstructorController {
 				sesionMap.put("alumnos", alumnosData);
 				sesionesData.add(sesionMap);
 			}
+
+			misActividades = actividadService.buscarActividadesActivas().stream()
+				.filter(a -> a.getInstructor() != null
+						  && a.getInstructor().getPersona() != null
+						  && a.getInstructor().getPersona().getId().equals(personaId))
+				.collect(Collectors.toList());
 		}
 
 		model.addAttribute("sesionesData", sesionesData);
+		model.addAttribute("misActividades", misActividades);
+		model.addAttribute("miInstructorId", miInstructorId);
 		model.addAttribute("hoy", LocalDate.now());
 		model.addAttribute("semestre", semestreService.buscarSemestreActivo());
 		return "instructor/dashboard";
 	}
 
 	@GetMapping("/instructores")
-	public String listar(@RequestParam(required = false) String nombre, Model model) {
+	public String listar(@RequestParam(required = false) String nombre, Model model, Authentication auth) {
+
+		boolean isAdmin = auth.getAuthorities().stream()
+			.anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
 		List<Instructor> instructores;
 		if (nombre != null && !nombre.trim().isEmpty()) {
-			instructores = instructorService.buscarActivosPorNombre(nombre.trim());
+			if (isAdmin) {
+				String n = nombre.trim().toLowerCase();
+				instructores = instructorService.buscarTodosInstructores().stream()
+					.filter(i -> i.getPersona().getNombre().toLowerCase().contains(n)
+						|| i.getPersona().getApellido().toLowerCase().contains(n))
+					.collect(Collectors.toList());
+			} else {
+				instructores = instructorService.buscarActivosPorNombre(nombre.trim());
+			}
 		} else {
-			instructores = instructorService.buscarInstructoresActivos();
+			instructores = isAdmin
+				? instructorService.buscarTodosInstructores()
+				: instructorService.buscarInstructoresActivos();
 		}
 
 		model.addAttribute("instructores", instructores);
@@ -163,7 +201,7 @@ public class InstructorController {
 		if (!archivo.isEmpty()) {
 			try {
 				String nombreArchivo = archivo.getOriginalFilename();
-				Path ruta = Paths.get(uploadDir + "/instructor/" + nombreArchivo);
+				Path ruta = Paths.get(uploadPath + "/instructor/" + nombreArchivo);
 				Files.createDirectories(ruta.getParent());
 				Files.copy(archivo.getInputStream(), ruta,
 					StandardCopyOption.REPLACE_EXISTING);

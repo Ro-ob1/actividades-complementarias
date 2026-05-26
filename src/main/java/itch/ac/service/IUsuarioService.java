@@ -6,6 +6,8 @@ import itch.ac.model.Usuario;
 public interface IUsuarioService {
 	List<Usuario> buscarTodosUsuarios();
 
+	List<Usuario> buscarUsuariosActivos();
+
 	void guardarUsuario(Usuario usuario);
 
 	Usuario buscarPorId(Integer id);

@@ -1,31 +1,38 @@
 services:
+
   db:
     image: mysql:8.0
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: 659411
+      MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: actividadescomplementarias
+      MYSQL_USER: acuser
+      MYSQL_PASSWORD: acpassword
     volumes:
       - db_data:/var/lib/mysql
     healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p659411"]
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-uroot", "-prootpassword"]
       interval: 10s
       timeout: 5s
       retries: 10
 
   app:
     build: .
+    restart: unless-stopped
     ports:
       - "8080:8080"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/actividadescomplementarias?useSSL=false&allowPublicKeyRetrieval=true
-      SPRING_DATASOURCE_USERNAME: root
-      SPRING_DATASOURCE_PASSWORD: 659411
-      UPLOAD_DIR: /uploads
-    volumes:
-      - uploads_data:/uploads
     depends_on:
       db:
         condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://db:3306/actividadescomplementarias?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=America/Mexico_City
+      SPRING_DATASOURCE_USERNAME: acuser
+      SPRING_DATASOURCE_PASSWORD: acpassword
+      SPRING_JPA_SHOW_SQL: "false"
+      SPRING_THYMELEAF_CACHE: "true"
+      UPLOAD_PATH: /app/uploads
+    volumes:
+      - uploads_data:/app/uploads
 
 volumes:
   db_data:

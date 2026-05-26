@@ -81,11 +81,15 @@ public class CriterioBaseController {
 
 	@GetMapping("/eliminar/{id}")
 	public String eliminar(@PathVariable Integer id, RedirectAttributes attributes) {
-		CriterioBase criterio = criterioBaseService.eliminarPorId(id);
-		if (criterio == null) {
-			attributes.addFlashAttribute("msg", "No se pudo eliminar el criterio.");
-		} else {
-			attributes.addFlashAttribute("msg", "Criterio eliminado correctamente.");
+		try {
+			CriterioBase criterio = criterioBaseService.eliminarPorId(id);
+			if (criterio == null) {
+				attributes.addFlashAttribute("msg", "⚠ No se encontró el criterio.");
+			} else {
+				attributes.addFlashAttribute("msg", "Criterio eliminado correctamente.");
+			}
+		} catch (org.springframework.dao.DataIntegrityViolationException e) {
+			attributes.addFlashAttribute("msg", "⚠ No se puede eliminar: hay evaluaciones que registraron valores para este criterio.");
 		}
 		return "redirect:/criterioBase/criterios";
 	}

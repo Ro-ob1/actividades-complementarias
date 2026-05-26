@@ -60,7 +60,7 @@
 							<table class="table table-bordered table-hover mb-0">
 								<thead>
 									<tr>
-										<th>ID</th>
+										<th>#</th>
 										<th>Alumno</th>
 										<th>Actividad</th>
 										<th>Semestre</th>
@@ -74,8 +74,8 @@
 									<tr th:if="${#lists.isEmpty(inscripciones)}">
 										<td colspan="8" class="text-center text-muted py-3">No se encontraron inscripciones.</td>
 									</tr>
-									<tr th:each="inscripcion : ${inscripciones}">
-										<td th:text="${inscripcion.id}"></td>
+									<tr th:each="inscripcion,inscStat : ${inscripciones}">
+										<td th:text="${inscStat.count}"></td>
 										<td th:text="${inscripcion.alumno.persona.nombre + ' ' + inscripcion.alumno.persona.apellido}"></td>
 										<td th:text="${inscripcion.actividad.nombre}"></td>
 										<td th:text="${inscripcion.actividad.semestre.nombre}"></td>

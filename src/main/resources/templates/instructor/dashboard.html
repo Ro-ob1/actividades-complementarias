@@ -13,6 +13,20 @@
 <header th:replace="~{fragmento/fragmento :: main-header}"></header>
 <main class="container flex-grow-1 my-4">
 
+    <!-- Flash messages -->
+    <div th:if="${msg != null and #strings.startsWith(msg, '⚠')}"
+         class="alert alert-danger alert-dismissible fade show mb-3" role="alert">
+        <i class="fas fa-exclamation-circle me-1"></i>
+        <span th:text="${msg}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    <div th:if="${msg != null and !#strings.startsWith(msg, '⚠')}"
+         class="alert alert-success alert-dismissible fade show mb-3" role="alert">
+        <i class="fas fa-check-circle me-1"></i>
+        <span th:text="${msg}"></span>
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+
     <!-- Sin sesiones hoy -->
     <div th:if="${sesionesData == null or sesionesData.isEmpty()}"
          class="card shadow-sm mb-4">
@@ -22,14 +36,14 @@
         </div>
         <div class="card-body text-center py-4" style="color:var(--tecnm-gris);">
             <i class="fas fa-calendar-times fa-2x mb-2"></i>
-            <p>No hay sesiones programadas para hoy.</p>
+            <p>No hay sesiones programadas o pendientes para hoy.</p>
             <p style="font-size:12px;">
                 Usa el menú Evaluaciones → Asistencias para registrar manualmente.
             </p>
         </div>
     </div>
 
-    <!-- Una tarjeta por sesión de hoy -->
+    <!-- Una tarjeta por sesión de hoy (solo PROGRAMADAS) -->
     <div th:each="sd : ${sesionesData}" class="card shadow-sm mb-4">
         <div class="card-header-custom d-flex align-items-center">
             <span>
@@ -63,9 +77,10 @@
             <!-- Tabla de alumnos -->
             <div class="table-responsive"
                  th:unless="${sd['alumnos'] == null or sd['alumnos'].isEmpty()}">
-                <form th:action="@{/asistencia/guardarLista}" method="post">
+                <form th:action="@{/sesion/guardarAsistencia}" method="post">
                     <input type="hidden" name="idSesion"
                            th:value="${sd['sesion'].id}">
+                    <input type="hidden" name="redirectTo" value="panel">
                     <table class="table table-bordered table-hover mb-0">
                         <thead>
                             <tr>
@@ -86,7 +101,8 @@
                                 </td>
                                 <td class="text-center">
                                     <input type="checkbox"
-                                           th:name="'asistio_' + ${ad['inscripcion'].alumno.id}"
+                                           name="asistioIds"
+                                           th:value="${ad['inscripcion'].alumno.id}"
                                            style="width:16px;height:16px;cursor:pointer;">
                                 </td>
                                 <td class="text-center">
@@ -98,16 +114,77 @@
                             </tr>
                         </tbody>
                     </table>
-                    <div class="p-3 border-top">
+                    <div class="p-3 border-top d-flex gap-2 flex-wrap align-items-center">
                         <button type="submit" class="btn btn-guardar btn-sm">
                             <i class="fas fa-save me-1"></i> Guardar asistencia
                         </button>
                         <a th:href="@{/asistencia/asistencias}"
-                           class="btn btn-outline-secondary btn-sm ms-2">
+                           class="btn btn-outline-secondary btn-sm">
                             <i class="fas fa-list me-1"></i> Ver todas las asistencias
                         </a>
                     </div>
                 </form>
+                <!-- Marcar todos asistieron (fuera del form principal) -->
+                <div class="px-3 pb-3">
+                    <form th:action="@{/sesion/marcarTodosAsistieron}" method="post" class="d-inline">
+                        <input type="hidden" name="idSesion" th:value="${sd['sesion'].id}">
+                        <input type="hidden" name="idActividad" th:value="${sd['sesion'].horario.actividad.id}">
+                        <input type="hidden" name="redirectTo" value="panel">
+                        <button type="submit" class="btn btn-outline-secondary btn-sm"
+                            onclick="return confirm('¿Marcar a todos los alumnos como asistidos y la sesión como realizada?')">
+                            <i class="fas fa-users-check me-1"></i> Marcar todos asistieron
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mis actividades -->
+    <div class="card shadow-sm mb-4">
+        <div class="card-header-custom d-flex align-items-center justify-content-between">
+            <span><i class="fas fa-running me-2"></i>Mis actividades</span>
+            <a th:href="@{/actividad/actividades}" class="btn btn-light btn-sm">
+                <i class="fas fa-list me-1"></i> Ver lista completa
+            </a>
+        </div>
+        <div class="card-body">
+            <div th:if="${misActividades == null or misActividades.isEmpty()}"
+                 class="text-center py-3" style="color:var(--tecnm-gris);">
+                <i class="fas fa-inbox fa-2x mb-2"></i>
+                <p>No tienes actividades asignadas en el semestre activo.</p>
+            </div>
+            <div class="table-responsive" th:unless="${misActividades == null or misActividades.isEmpty()}">
+                <table class="table table-bordered table-hover mb-0">
+                    <thead>
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Disciplina</th>
+                            <th>Semestre</th>
+                            <th class="text-center">Cupo</th>
+                            <th class="text-center">Operaciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="act : ${misActividades}">
+                            <td th:text="${act.nombre}"></td>
+                            <td th:text="${act.disciplina.nombre}"></td>
+                            <td th:text="${act.semestre.nombre}"></td>
+                            <td class="text-center" th:text="${act.cupoMaximo}"></td>
+                            <td class="text-center">
+                                <a class="btn btn-ver btn-sm"
+                                   th:href="@{/actividad/ver/{id}(id=${act.id})}">
+                                    <i class="bi bi-eye"></i>
+                                </a>
+                                <a class="btn btn-outline-secondary btn-sm"
+                                   th:href="@{/sesion/sesiones(idActividad=${act.id})}"
+                                   title="Ver sesiones">
+                                    <i class="fas fa-calendar-check"></i>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>
@@ -126,10 +203,6 @@
             <a th:href="@{/evaluacion/nuevo}"
                class="btn btn-outline-secondary btn-sm">
                 <i class="fas fa-star-half-alt me-1"></i> Registrar evaluación
-            </a>
-            <a th:href="@{/constancia/nuevo}"
-               class="btn btn-outline-secondary btn-sm">
-                <i class="fas fa-certificate me-1"></i> Generar constancias
             </a>
         </div>
     </div>

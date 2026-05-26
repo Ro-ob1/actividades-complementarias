@@ -33,7 +33,11 @@
 
 				<div class="card shadow-sm">
 					<div class="card-header-custom d-flex align-items-center justify-content-between">
-						<span><i class="fas fa-running me-2"></i>Actividades complementarias</span>
+						<span>
+							<i class="fas fa-running me-2"></i>
+							<span th:if="${soloMisActividades}">Mis actividades</span>
+							<span th:unless="${soloMisActividades}">Actividades complementarias</span>
+						</span>
 						<a sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')"
 						   th:href="@{/actividad/nuevo}" class="btn btn-light btn-sm">
 							<i class="fas fa-plus me-1"></i> Nueva
@@ -55,7 +59,7 @@
 							<table class="table table-bordered table-hover mb-0">
 								<thead>
 									<tr>
-										<th>ID</th>
+										<th>#</th>
 										<th>Imagen</th>
 										<th>Nombre</th>
 										<th>Disciplina</th>
@@ -67,8 +71,8 @@
 									</tr>
 								</thead>
 								<tbody>
-									<tr th:each="actividad : ${actividades}">
-										<td th:text="${actividad.id}"></td>
+									<tr th:each="actividad,actStat : ${actividades}">
+										<td th:text="${actStat.count}"></td>
 										<td class="text-center">
 											<img th:src="@{/images/actividad/{img}(img=${actividad.imagenFlyer})}"
 												class="img-actividad" onerror="this.src='/images/no-image.jpg'">

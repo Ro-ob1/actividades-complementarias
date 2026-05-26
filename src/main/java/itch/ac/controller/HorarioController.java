@@ -19,6 +19,7 @@ import org.springframework.core.io.ClassPathResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -49,6 +50,7 @@ import itch.ac.service.IHorarioService;
 import itch.ac.service.IInstructorService;
 import itch.ac.service.ISemestreService;
 import itch.ac.service.ISesionService;
+import itch.ac.service.IUsuarioService;
 
 @Controller
 @RequestMapping("/horario")
@@ -60,12 +62,25 @@ public class HorarioController {
 	@Autowired private IInstructorService instructorService;
 	@Autowired private ISemestreService semestreService;
 	@Autowired private ISesionService sesionService;
+	@Autowired private IUsuarioService usuarioService;
 
 	@GetMapping("/horarios")
 	public String listar(@RequestParam(required = false) Integer idInstructor,
 	                     @RequestParam(required = false) Integer idSemestre,
 	                     @RequestParam(required = false) String dia,
+	                     Authentication auth,
 	                     Model model) {
+
+		// Cuando el rol es INSTRUCTOR, forzar filtro a su propio ID
+		boolean esInstructor = auth.getAuthorities().stream()
+			.anyMatch(a -> a.getAuthority().equals("ROLE_INSTRUCTOR"));
+		if (esInstructor) {
+			var usuario = usuarioService.buscarPorUsername(auth.getName());
+			Integer personaId = usuario.getPersona().getId();
+			idInstructor = instructorService.buscarInstructoresActivos().stream()
+				.filter(i -> i.getPersona().getId().equals(personaId))
+				.findFirst().map(i -> i.getId()).orElse(idInstructor);
+		}
 
 		// Sin filtros activos → mostrar el semestre activo por defecto
 		if (idInstructor == null && idSemestre == null && (dia == null || dia.isEmpty())) {

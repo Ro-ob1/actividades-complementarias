@@ -76,7 +76,6 @@
 											<th>No. Control</th>
 											<th>Nombre</th>
 											<th class="text-center" style="width:100px;">Asistió</th>
-											<th>Observaciones</th>
 										</tr>
 									</thead>
 									<tbody>
@@ -89,12 +88,6 @@
 													class="form-check-input chk-asistio"
 													style="width:20px;height:20px;"
 													th:checked="${sesion.estatus == 'REALIZADA' and asistenciaMap.containsKey(insc.alumno.id) and asistenciaMap[insc.alumno.id].asistio}">
-											</td>
-											<td>
-												<input type="text" class="form-control form-control-sm"
-													th:name="'obs_' + ${insc.alumno.id}"
-													maxlength="200"
-													th:value="${asistenciaMap.containsKey(insc.alumno.id) ? asistenciaMap[insc.alumno.id].observaciones : ''}">
 											</td>
 										</tr>
 									</tbody>

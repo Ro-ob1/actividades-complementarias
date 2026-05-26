@@ -266,6 +266,12 @@
 			}
 
 			input.addEventListener('input', function () {
+				// Clamp value to 0–100
+				if (this.value !== '') {
+					var numVal = parseFloat(this.value);
+					if (numVal > 100) { this.value = 100; }
+					if (numVal < 0)   { this.value = 0; }
+				}
 				if (badge) {
 					var v = this.value;
 					if (v === '') {

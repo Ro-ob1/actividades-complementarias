@@ -1,5 +1,6 @@
 package itch.ac.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -27,6 +28,7 @@ import itch.ac.model.Semestre;
 import itch.ac.service.IActividadService;
 import itch.ac.service.IAlumnoService;
 import itch.ac.service.ICarreraService;
+import itch.ac.service.IConstanciaService;
 import itch.ac.service.IInscripcionService;
 import itch.ac.service.IPersonaService;
 import itch.ac.service.ISemestreService;
@@ -56,8 +58,11 @@ public class AlumnoController {
 	@Autowired
 	private IActividadService actividadService;
 
-	@Value("${app.upload.dir:/uploads}")
-	private String uploadDir;
+	@Autowired
+	private IConstanciaService constanciaService;
+
+	@Value("${upload.path}")
+	private String uploadPath;
 
 	@GetMapping("/inicio")
 	public String inicio(Authentication auth, Model model) {
@@ -68,15 +73,49 @@ public class AlumnoController {
 		List<Inscripcion> inscripciones = List.of();
 		int creditos = 0;
 
+		List<Map<String, String>> notificaciones = new ArrayList<>();
+
 		if (alumno != null) {
 			inscripciones = inscripcionService.buscarInscripcionesPorAlumno(alumno);
-			creditos = inscripciones.stream().filter(i -> "APROBADA".equals(i.getEstatusSolicitud()))
-					.mapToInt(i -> i.getActividad().getDisciplina().getCreditos()).sum();
+			final Integer alumnoId = alumno.getId();
+
+			creditos = constanciaService.buscarTodasConstancias().stream()
+					.filter(c -> c.getInscripcion().getAlumno().getId().equals(alumnoId)
+							&& "ENTREGADA".equals(c.getEstatus()))
+					.mapToInt(c -> c.getValorCurricular() != null ? c.getValorCurricular() : 0)
+					.sum();
+
+			// Notificaciones: solicitudes rechazadas (puede volver a solicitar)
+			inscripciones.stream()
+					.filter(i -> "RECHAZADA".equals(i.getEstatusSolicitud()))
+					.forEach(i -> {
+						Map<String, String> n = new HashMap<>();
+						n.put("tipo", "danger");
+						n.put("mensaje", "Tu solicitud para \"" + i.getActividad().getNombre() + "\" fue rechazada"
+								+ (i.getMotivoRechazo() != null && !i.getMotivoRechazo().isEmpty()
+										? ": " + i.getMotivoRechazo()
+										: "")
+								+ ". Puedes solicitar una nueva actividad.");
+						notificaciones.add(n);
+					});
+
+			// Notificaciones: constancias listas para recoger
+			constanciaService.buscarTodasConstancias().stream()
+					.filter(c -> c.getInscripcion().getAlumno().getId().equals(alumnoId)
+							&& "GENERADA".equals(c.getEstatus()))
+					.forEach(c -> {
+						Map<String, String> n = new HashMap<>();
+						n.put("tipo", "info");
+						n.put("mensaje", "Tu constancia de \"" + c.getInscripcion().getActividad().getNombre()
+								+ "\" está lista. Acude con el encargado para recibirla.");
+						notificaciones.add(n);
+					});
 		}
 
 		model.addAttribute("alumno", alumno);
 		model.addAttribute("inscripciones", inscripciones);
 		model.addAttribute("creditos", creditos);
+		model.addAttribute("notificaciones", notificaciones);
 		model.addAttribute("semestre", semestre);
 		return "alumno/dashboard";
 	}
@@ -142,7 +181,15 @@ public class AlumnoController {
 	        attributes.addFlashAttribute("msg", "Error: No se encontró la actividad con ID: " + idActividad);
 	        return "redirect:/alumno/catalogo";
 	    }
-	    
+
+	    // RF-13: un alumno solo puede tener una inscripción activa (PENDIENTE o APROBADA) por semestre
+	    Semestre semestreActividad = actividad.getSemestre();
+	    if (inscripcionService.alumnoTieneInscripcionActiva(alumno, semestreActividad)) {
+	        attributes.addFlashAttribute("msg",
+	                "⚠ Ya tienes una inscripción activa en este semestre. Puedes volver a solicitar solo si tu solicitud anterior fue rechazada.");
+	        return "redirect:/alumno/catalogo";
+	    }
+
 	    // Crear inscripción
 	    Inscripcion inscripcion = new Inscripcion();
 	    inscripcion.setAlumno(alumno);
@@ -157,7 +204,7 @@ public class AlumnoController {
 	        System.out.println("8. Tamaño: " + archivoHorarioPdf.getSize() + " bytes");
 	        try {
 	            String nombre = System.currentTimeMillis() + "_" + archivoHorarioPdf.getOriginalFilename();
-	            Path ruta = Paths.get(uploadDir + "/inscripcion/" + nombre);
+	            Path ruta = Paths.get(uploadPath + "/inscripcion/" + nombre);
 	            Files.createDirectories(ruta.getParent());
 	            Files.copy(archivoHorarioPdf.getInputStream(), ruta, StandardCopyOption.REPLACE_EXISTING);
 	            inscripcion.setArchivoHorario(nombre);
@@ -189,17 +236,31 @@ public class AlumnoController {
 	@GetMapping("/alumnos")
 	public String listar(@RequestParam(required = false) String numControl,
 	                     @RequestParam(required = false) String nombre,
-	                     Model model) {
+	                     Model model, Authentication auth) {
+
+		boolean isAdmin = auth.getAuthorities().stream()
+			.anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
 
 		List<Alumno> alumnos;
 
 		if (numControl != null && !numControl.trim().isEmpty()) {
 			Alumno alumno = alumnoService.buscarPorNumControl(numControl.trim());
+			if (!isAdmin && alumno != null && !Integer.valueOf(1).equals(alumno.getActivo())) {
+				alumno = null;
+			}
 			alumnos = alumno != null ? List.of(alumno) : List.of();
 		} else if (nombre != null && !nombre.trim().isEmpty()) {
-			alumnos = alumnoService.buscarActivosPorNombre(nombre.trim());
+			if (isAdmin) {
+				String n = nombre.trim().toLowerCase();
+				alumnos = alumnoService.buscarTodosAlumnos().stream()
+					.filter(a -> a.getPersona().getNombre().toLowerCase().contains(n)
+						|| a.getPersona().getApellido().toLowerCase().contains(n))
+					.collect(Collectors.toList());
+			} else {
+				alumnos = alumnoService.buscarActivosPorNombre(nombre.trim());
+			}
 		} else {
-			alumnos = alumnoService.buscarAlumnosActivos();
+			alumnos = isAdmin ? alumnoService.buscarTodosAlumnos() : alumnoService.buscarAlumnosActivos();
 		}
 
 		model.addAttribute("alumnos", alumnos);

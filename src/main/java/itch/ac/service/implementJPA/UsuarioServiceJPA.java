@@ -24,6 +24,11 @@ public class UsuarioServiceJPA implements IUsuarioService {
 	}
 
 	@Override
+	public List<Usuario> buscarUsuariosActivos() {
+		return usuarioRepository.findByActivo(1);
+	}
+
+	@Override
 	public void guardarUsuario(Usuario usuario) {
 		usuarioRepository.save(usuario);
 	}

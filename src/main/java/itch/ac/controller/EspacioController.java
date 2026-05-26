@@ -79,11 +79,15 @@ public class EspacioController {
 
 	@GetMapping("/eliminar/{id}")
 	public String eliminar(@PathVariable Integer id, RedirectAttributes attributes) {
-		Espacio espacio = espacioService.eliminarPorId(id);
-		if (espacio == null) {
-			attributes.addFlashAttribute("msg", "No se pudo eliminar el espacio.");
-		} else {
-			attributes.addFlashAttribute("msg", "Espacio eliminado correctamente.");
+		try {
+			Espacio espacio = espacioService.eliminarPorId(id);
+			if (espacio == null) {
+				attributes.addFlashAttribute("msg", "⚠ No se encontró el espacio.");
+			} else {
+				attributes.addFlashAttribute("msg", "Espacio eliminado correctamente.");
+			}
+		} catch (org.springframework.dao.DataIntegrityViolationException e) {
+			attributes.addFlashAttribute("msg", "⚠ No se puede eliminar: hay horarios asignados a este espacio.");
 		}
 		return "redirect:/espacio/espacios";
 	}

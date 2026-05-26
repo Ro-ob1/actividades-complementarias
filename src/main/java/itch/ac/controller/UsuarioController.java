@@ -7,6 +7,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -71,8 +72,12 @@ public class UsuarioController {
 	}
 
 	@GetMapping("/usuarios")
-	public String listar(Model model) {
-		List<Usuario> usuarios = usuarioService.buscarTodosUsuarios();
+	public String listar(Model model, Authentication auth) {
+		boolean isAdmin = auth.getAuthorities().stream()
+			.anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+		List<Usuario> usuarios = isAdmin
+			? usuarioService.buscarTodosUsuarios()
+			: usuarioService.buscarUsuariosActivos();
 		model.addAttribute("usuarios", usuarios);
 		return "usuario/listaUsuarios";
 	}
@@ -178,10 +183,15 @@ public class UsuarioController {
 	}
 
 	@GetMapping("/eliminar/{id}")
-	public String eliminar(@PathVariable Integer id, RedirectAttributes attributes) {
+	public String eliminar(@PathVariable Integer id, Authentication auth, RedirectAttributes attributes) {
+		Usuario usuarioActual = usuarioService.buscarPorUsername(auth.getName());
+		if (usuarioActual != null && usuarioActual.getId().equals(id)) {
+			attributes.addFlashAttribute("msg", "⚠ No puedes eliminar tu propio usuario.");
+			return "redirect:/usuario/usuarios";
+		}
 		Usuario usuario = usuarioService.eliminarPorId(id);
 		if (usuario == null) {
-			attributes.addFlashAttribute("msg", "No se pudo eliminar el usuario.");
+			attributes.addFlashAttribute("msg", "⚠ No se encontró el usuario.");
 		} else {
 			attributes.addFlashAttribute("msg", "Usuario eliminado correctamente.");
 		}

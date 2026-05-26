@@ -41,8 +41,8 @@ public class InscripcionController {
 	@Autowired private IEncargadoService encargadoService;
 	@Autowired private ISemestreService semestreService;
 
-	@Value("${app.upload.dir:/uploads}")
-	private String uploadDir;
+	@Value("${upload.path}")
+	private String uploadPath;
 
 	@GetMapping("/inscripciones")
 	public String listar(
@@ -134,7 +134,7 @@ public class InscripcionController {
 			}
 			try {
 				String nombreArchivo = archivo.getOriginalFilename();
-				Path ruta = Paths.get(uploadDir + "/inscripcion/" + nombreArchivo);
+				Path ruta = Paths.get(uploadPath + "/inscripcion/" + nombreArchivo);
 				Files.createDirectories(ruta.getParent());
 				Files.copy(archivo.getInputStream(), ruta, StandardCopyOption.REPLACE_EXISTING);
 				inscripcion.setArchivoHorario(nombreArchivo);
@@ -204,11 +204,15 @@ public class InscripcionController {
 
 	@GetMapping("/eliminar/{id}")
 	public String eliminar(@PathVariable Integer id, RedirectAttributes attributes) {
-		Inscripcion inscripcion = inscripcionService.eliminarPorId(id);
-		if (inscripcion == null) {
-			attributes.addFlashAttribute("msg", "⚠ No se pudo eliminar la inscripción.");
-		} else {
-			attributes.addFlashAttribute("msg", "Inscripción eliminada correctamente.");
+		try {
+			Inscripcion inscripcion = inscripcionService.eliminarPorId(id);
+			if (inscripcion == null) {
+				attributes.addFlashAttribute("msg", "⚠ No se encontró la inscripción.");
+			} else {
+				attributes.addFlashAttribute("msg", "Inscripción eliminada correctamente.");
+			}
+		} catch (org.springframework.dao.DataIntegrityViolationException e) {
+			attributes.addFlashAttribute("msg", "⚠ No se puede eliminar: la inscripción tiene evaluaciones o constancias asociadas.");
 		}
 		return "redirect:/inscripcion/inscripciones";
 	}

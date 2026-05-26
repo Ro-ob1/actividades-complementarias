@@ -1,8 +1,7 @@
 target/
 .git/
-.gitignore
-*.md
-.mvn/
-mvnw
-mvnw.cmd
-docker-compose.yml
+.idea/
+*.iml
+*.log
+.mvn/wrapper/maven-wrapper.jar
+C:/actividadescomplementarias/

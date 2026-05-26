@@ -82,7 +82,7 @@
 							<table class="table table-bordered table-hover mb-0">
 								<thead>
 									<tr>
-										<th>ID</th>
+										<th>#</th>
 										<th>Alumno</th>
 										<th>Actividad</th>
 										<th>Semestre</th>
@@ -99,8 +99,8 @@
 									<tr th:if="${#lists.isEmpty(constancias)}">
 										<td colspan="11" class="text-center text-muted py-3">No se encontraron constancias.</td>
 									</tr>
-									<tr th:each="constancia : ${constancias}">
-										<td th:text="${constancia.id}"></td>
+									<tr th:each="constancia,constStat : ${constancias}">
+										<td th:text="${constStat.count}"></td>
 										<td th:text="${constancia.inscripcion.alumno.persona.nombre + ' ' + constancia.inscripcion.alumno.persona.apellido}"></td>
 										<td th:text="${constancia.inscripcion.actividad.nombre}"></td>
 										<td th:text="${constancia.semestre != null ? constancia.semestre.nombre : '—'}"></td>
@@ -127,20 +127,38 @@
 											</a>
 										</td>
 										<td class="text-center">
-											<a class="btn btn-ver btn-sm"
-												th:href="@{/constancia/ver/{id}(id=${constancia.id})}">
-												<i class="bi bi-eye"></i>
-											</a>
-											<a sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')" class="btn btn-editar btn-sm"
-												th:href="@{/constancia/editar/{id}(id=${constancia.id})}">
-												<i class="bi bi-pencil"></i>
-											</a>
-											<button sec:authorize="hasRole('ROLE_ADMIN')" class="btn btn-eliminar btn-sm" data-bs-toggle="modal"
-												data-bs-target="#modalEliminar"
-												th:attr="data-id=${constancia.id}, data-nombre=${constancia.inscripcion.alumno.persona.nombre + ' ' + constancia.inscripcion.alumno.persona.apellido + ' — ' + constancia.inscripcion.actividad.nombre}"
-												onclick="prepararEliminar(this)">
-												<i class="bi bi-trash"></i>
-											</button>
+											<div class="d-flex justify-content-center align-items-center flex-wrap gap-1">
+												<!-- CRUD: ver / editar / eliminar -->
+												<div class="d-flex gap-1">
+													<a class="btn btn-ver btn-sm"
+														th:href="@{/constancia/ver/{id}(id=${constancia.id})}"
+														title="Ver detalle">
+														<i class="bi bi-eye"></i>
+													</a>
+													<a sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')" class="btn btn-editar btn-sm"
+														th:href="@{/constancia/editar/{id}(id=${constancia.id})}"
+														title="Editar">
+														<i class="bi bi-pencil"></i>
+													</a>
+													<button sec:authorize="hasRole('ROLE_ADMIN')" class="btn btn-eliminar btn-sm" data-bs-toggle="modal"
+														data-bs-target="#modalEliminar"
+														th:attr="data-id=${constancia.id}, data-nombre=${constancia.inscripcion.alumno.persona.nombre + ' ' + constancia.inscripcion.alumno.persona.apellido + ' — ' + constancia.inscripcion.actividad.nombre}"
+														onclick="prepararEliminar(this)"
+														title="Eliminar">
+														<i class="bi bi-trash"></i>
+													</button>
+												</div>
+												<!-- Acción: marcar entregada (separada visualmente) -->
+												<a sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')"
+													th:if="${constancia.estatus == 'GENERADA'}"
+													th:href="@{/constancia/entregar/{id}(id=${constancia.id})}"
+													class="btn btn-sm border-start ps-2 ms-1"
+													style="background:#198754;color:#fff;"
+													title="Marcar como entregada"
+													onclick="return confirm('¿Marcar esta constancia como entregada al alumno?')">
+													<i class="bi bi-check2-circle"></i>
+												</a>
+											</div>
 										</td>
 									</tr>
 								</tbody>

@@ -8,6 +8,7 @@ import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -22,8 +23,10 @@ import itch.ac.model.Actividad;
 import itch.ac.model.Semestre;
 import itch.ac.service.IActividadService;
 import itch.ac.service.IDisciplinaService;
+import itch.ac.service.IHorarioService;
 import itch.ac.service.IInstructorService;
 import itch.ac.service.ISemestreService;
+import itch.ac.service.IUsuarioService;
 
 @Controller
 @RequestMapping("/actividad")
@@ -41,12 +44,23 @@ public class ActividadController {
 	@Autowired
 	private IInstructorService instructorService;
 
-	@Value("${app.upload.dir:/uploads}")
-	private String uploadDir;
+	@Autowired
+	private IUsuarioService usuarioService;
+
+	@Autowired
+	private IHorarioService horarioService;
+
+	@Value("${upload.path}")
+	private String uploadPath;
 
 	@GetMapping("/actividades")
 	public String listar(@RequestParam(required = false) String nombre,
-			@RequestParam(required = false) Integer idSemestre, Model model) {
+			@RequestParam(required = false) Integer idSemestre, Model model, Authentication auth) {
+
+		boolean isAdmin = auth.getAuthorities().stream()
+			.anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+		boolean isInstructor = auth.getAuthorities().stream()
+			.anyMatch(a -> a.getAuthority().equals("ROLE_INSTRUCTOR"));
 
 		Semestre semestre = null;
 		if (idSemestre != null) {
@@ -56,10 +70,30 @@ public class ActividadController {
 		List<Actividad> actividades;
 		if (nombre != null && !nombre.trim().isEmpty()) {
 			actividades = actividadService.buscarPorNombre(nombre);
+			if (!isAdmin) {
+				actividades = actividades.stream()
+					.filter(a -> Integer.valueOf(1).equals(a.getActivo()))
+					.collect(java.util.stream.Collectors.toList());
+			}
 		} else if (semestre != null) {
-			actividades = actividadService.buscarActividadesPorSemestre(semestre);
+			actividades = isAdmin
+				? actividadService.buscarActividadesPorSemestre(semestre)
+				: actividadService.buscarActividadesActivasPorSemestre(semestre);
 		} else {
-			actividades = actividadService.buscarTodasActividades();
+			actividades = isAdmin
+				? actividadService.buscarTodasActividades()
+				: actividadService.buscarActividadesActivas();
+		}
+
+		if (isInstructor) {
+			var usuario = usuarioService.buscarPorUsername(auth.getName());
+			Integer personaId = usuario.getPersona().getId();
+			actividades = actividades.stream()
+				.filter(a -> a.getInstructor() != null
+						  && a.getInstructor().getPersona() != null
+						  && a.getInstructor().getPersona().getId().equals(personaId))
+				.collect(java.util.stream.Collectors.toList());
+			model.addAttribute("soloMisActividades", true);
 		}
 
 		model.addAttribute("actividades", actividades);
@@ -120,7 +154,7 @@ public class ActividadController {
 		if (!archivo.isEmpty()) {
 			try {
 				String nombreArchivo = archivo.getOriginalFilename();
-				Path ruta = Paths.get(uploadDir + "/actividad/" + nombreArchivo);
+				Path ruta = Paths.get(uploadPath + "/actividad/" + nombreArchivo);
 				Files.createDirectories(ruta.getParent());
 				Files.copy(archivo.getInputStream(), ruta, StandardCopyOption.REPLACE_EXISTING);
 				actividad.setImagenFlyer(nombreArchivo);
@@ -162,6 +196,7 @@ public class ActividadController {
 			return "redirect:/actividad/actividades";
 		}
 		model.addAttribute("actividad", actividad);
+		model.addAttribute("horarios", horarioService.buscarHorariosPorActividad(actividad));
 		return "actividad/detalleActividad";
 	}
 

@@ -55,6 +55,20 @@
 	<header th:replace="~{fragmento/fragmento :: main-header}"></header>
 	<main class="container flex-grow-1 my-4">
 
+		<!-- Flash messages -->
+		<div th:if="${msg != null and #strings.startsWith(msg, '⚠')}"
+			class="alert alert-warning alert-dismissible fade show" role="alert">
+			<i class="fas fa-exclamation-triangle me-1"></i>
+			<span th:text="${msg}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+		<div th:if="${msg != null and !#strings.startsWith(msg, '⚠')}"
+			class="alert alert-success alert-dismissible fade show" role="alert">
+			<i class="fas fa-check-circle me-1"></i>
+			<span th:text="${msg}"></span>
+			<button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+		</div>
+
 		<!-- Encabezado -->
 		<div class="d-flex align-items-center justify-content-between mb-3">
 			<div>

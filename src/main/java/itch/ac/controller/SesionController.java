@@ -116,6 +116,7 @@ public class SesionController {
 	public String guardarAsistencia(
 			@RequestParam Integer idSesion,
 			@RequestParam(value = "asistioIds", required = false) List<Integer> asistioIds,
+			@RequestParam(required = false) String redirectTo,
 			HttpServletRequest request,
 			RedirectAttributes attributes) {
 
@@ -144,6 +145,7 @@ public class SesionController {
 		sesionService.guardarSesion(sesion);
 
 		attributes.addFlashAttribute("msg", "Asistencia registrada correctamente.");
+		if ("panel".equals(redirectTo)) return "redirect:/instructor/inicio";
 		return "redirect:/sesion/sesiones?idActividad=" + actividad.getId();
 	}
 
@@ -151,6 +153,7 @@ public class SesionController {
 	public String marcarTodosAsistieron(
 			@RequestParam Integer idSesion,
 			@RequestParam Integer idActividad,
+			@RequestParam(required = false) String redirectTo,
 			RedirectAttributes attributes) {
 
 		Sesion sesion = sesionService.buscarPorId(idSesion);
@@ -181,6 +184,7 @@ public class SesionController {
 		attributes.addFlashAttribute("msg",
 				"Sesión #" + sesion.getNumeroSesion() + " marcada como realizada. "
 				+ inscripciones.size() + " alumno(s) registrado(s) con asistencia.");
+		if ("panel".equals(redirectTo)) return "redirect:/instructor/inicio";
 		return "redirect:/sesion/sesiones?idActividad=" + idActividad;
 	}
 
@@ -193,6 +197,33 @@ public class SesionController {
 
 		if (ids == null || ids.isEmpty()) {
 			attributes.addFlashAttribute("msg", "⚠ No seleccionaste ninguna sesión.");
+			return "redirect:/sesion/sesiones?idActividad=" + idActividad;
+		}
+
+		if ("REALIZAR".equals(accion)) {
+			int realizadas = 0;
+			for (Integer id : ids) {
+				Sesion sesion = sesionService.buscarPorId(id);
+				if (sesion == null || !"PROGRAMADA".equals(sesion.getEstatus())) continue;
+				Actividad actividad = sesion.getHorario().getActividad();
+				List<Inscripcion> inscripciones = inscripcionService.buscarInscripcionesPorActividad(actividad)
+						.stream()
+						.filter(i -> "APROBADA".equalsIgnoreCase(i.getEstatusSolicitud()))
+						.collect(Collectors.toList());
+				for (Inscripcion insc : inscripciones) {
+					Alumno alumno = insc.getAlumno();
+					Asistencia asistencia = asistenciaService.buscarPorAlumnoYSesion(alumno, sesion);
+					if (asistencia == null) asistencia = new Asistencia();
+					asistencia.setAlumno(alumno);
+					asistencia.setSesion(sesion);
+					asistencia.setAsistio(true);
+					asistenciaService.guardarAsistencia(asistencia);
+				}
+				sesion.setEstatus("REALIZADA");
+				sesionService.guardarSesion(sesion);
+				realizadas++;
+			}
+			attributes.addFlashAttribute("msg", realizadas + " sesión(es) marcadas como realizadas con asistencia completa.");
 			return "redirect:/sesion/sesiones?idActividad=" + idActividad;
 		}
 

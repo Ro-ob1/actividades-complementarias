@@ -173,6 +173,14 @@ public class EvaluacionController {
 			evaluacion.setNivel(nivel);
 		}
 
+		if (evaluacion.getValorNumerico() == null || evaluacion.getNivel() == null) {
+			attributes.addFlashAttribute("msg",
+					"⚠ Debes ingresar al menos un criterio de evaluación para calcular el valor.");
+			return evaluacion.getId() != null
+					? "redirect:/evaluacion/editar/" + evaluacion.getId()
+					: "redirect:/evaluacion/nuevo";
+		}
+
 		if (evaluacion.getId() == null) {
 			evaluacion.setFecha(LocalDate.now());
 		} else {

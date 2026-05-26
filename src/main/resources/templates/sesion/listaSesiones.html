@@ -143,10 +143,15 @@
 								<input type="hidden" name="accion"      id="accionBulk" value="">
 
 								<!-- Barra de acciones masivas -->
-								<div sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')" class="toolbar-bulk" id="toolbarBulk">
+								<div sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO','ROLE_INSTRUCTOR')" class="toolbar-bulk" id="toolbarBulk">
 									<span class="text-muted me-1" style="font-size:13px;">
 										<strong id="countSel">0</strong> seleccionada(s)
 									</span>
+									<button id="btnMarcarTodos" type="button" class="btn btn-sm btn-outline-success" style="display:none;"
+										title="Marcar todos los alumnos de las sesiones seleccionadas como asistieron"
+										data-bs-toggle="modal" data-bs-target="#modalRealizarBulk">
+										<i class="bi bi-check-all me-1"></i> Marcar todos asistieron
+									</button>
 									<button type="button" class="btn btn-sm btn-eliminar"
 										data-bs-toggle="modal" data-bs-target="#modalCancelarBulk">
 										<i class="bi bi-x-circle me-1"></i> Cancelar
@@ -163,13 +168,13 @@
 
 								<div class="table-responsive">
 									<table class="table table-bordered table-hover mb-0">
-										<caption sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')" class="text-muted pb-1" style="font-size:11px; caption-side:top;">
+										<caption sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO','ROLE_INSTRUCTOR')" class="text-muted pb-1" style="font-size:11px; caption-side:top;">
 											<i class="bi bi-info-circle me-1"></i>
-											Selecciona sesiones con los checkboxes para cancelarlas o reactivarlas en grupo.
+											Selecciona <strong>1 sesión</strong> para tomar lista o marcar asistencia; selecciona <strong>varias</strong> para cancelarlas o reactivarlas.
 										</caption>
 										<thead>
 											<tr>
-												<th sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')" style="width:40px;" class="text-center">
+												<th sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO','ROLE_INSTRUCTOR')" style="width:40px;" class="text-center">
 													<input type="checkbox" id="checkAll" class="form-check-input"
 														style="width:16px;height:16px;" onchange="toggleTodos(this)">
 												</th>
@@ -179,7 +184,7 @@
 												<th>Hora</th>
 												<th>Espacio</th>
 												<th class="text-center">Estatus</th>
-												<th class="text-center">Lista</th>
+											<th class="text-center">Lista</th>
 											</tr>
 										</thead>
 										<tbody>
@@ -188,10 +193,11 @@
 											</tr>
 											<tr th:each="sesion : ${sesiones}"
 												th:classappend="${sesion.estatus == 'CANCELADA'} ? 'cancelada-row' : ''">
-												<td sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')" class="text-center">
+												<td sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO','ROLE_INSTRUCTOR')" class="text-center">
 													<input type="checkbox" name="ids" th:value="${sesion.id}"
 														class="form-check-input chk-sesion"
 														style="width:16px;height:16px;"
+														th:attr="data-estatus=${sesion.estatus}"
 														onchange="actualizarToolbar()">
 												</td>
 												<td class="text-center" th:text="${sesion.numeroSesion}"></td>
@@ -223,14 +229,6 @@
 														title="Sesión cancelada">
 														<i class="bi bi-clipboard-x"></i>
 													</a>
-													<!-- Botón rápido: marcar todos como asistieron -->
-													<button th:if="${sesion.estatus == 'PROGRAMADA'}"
-														type="button"
-														class="btn btn-outline-success btn-sm ms-1"
-														title="Marcar todos como asistieron (acceso rápido)"
-														th:attr="onclick='confirmarMarcarTodos(' + ${sesion.id} + ',' + ${sesion.numeroSesion} + ')'">
-														<i class="bi bi-check-all"></i>
-													</button>
 												</td>
 											</tr>
 										</tbody>
@@ -238,11 +236,7 @@
 								</div>
 							</form>
 
-							<!-- Form oculto para marcar todos asistieron -->
-							<form id="formMarcarTodos" method="post" th:action="@{/sesion/marcarTodosAsistieron}" style="display:none;">
-								<input type="hidden" id="marcarTodosIdSesion"    name="idSesion">
-								<input type="hidden" id="marcarTodosIdActividad" name="idActividad" th:value="${idActividad}">
-							</form>
+
 						</div>
 					</div>
 				</div>
@@ -270,6 +264,32 @@
 						</button>
 						<button type="button" class="btn btn-eliminar" onclick="ejecutarBulk('CANCELAR')">
 							<i class="bi bi-x-circle me-1"></i> Sí, cancelar
+						</button>
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<!-- Modal: confirmar marcar todos asistieron -->
+		<div class="modal fade" id="modalRealizarBulk" tabindex="-1">
+			<div class="modal-dialog">
+				<div class="modal-content">
+					<div class="modal-header">
+						<h5 class="modal-title">
+							<i class="bi bi-check-all text-success me-2"></i>Marcar todos asistieron
+						</h5>
+						<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+					</div>
+					<div class="modal-body" style="font-size:14px;">
+						¿Registrar asistencia completa en las <strong id="countRealizar">0</strong> sesión(es) PROGRAMADA(s) seleccionadas?
+						<br><span class="text-muted" style="font-size:12px;">Todos los alumnos inscritos quedarán como asistidos y las sesiones como REALIZADA. Solo aplica a sesiones PROGRAMADAS.</span>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+							<i class="fas fa-times me-1"></i> No
+						</button>
+						<button type="button" class="btn btn-guardar" onclick="ejecutarBulk('REALIZAR')">
+							<i class="bi bi-check-all me-1"></i> Sí, marcar
 						</button>
 					</div>
 				</div>
@@ -318,6 +338,12 @@
 				n > 0 && n < document.querySelectorAll('.chk-sesion').length;
 			document.getElementById('checkAll').checked =
 				n === document.querySelectorAll('.chk-sesion').length;
+
+			// "Marcar todos asistieron" visible si al menos 1 seleccionada es PROGRAMADA
+			const programadasSel = Array.from(checked).filter(c => c.getAttribute('data-estatus') === 'PROGRAMADA').length;
+			const btnMarcarTodos = document.getElementById('btnMarcarTodos');
+			btnMarcarTodos.style.display = programadasSel > 0 ? '' : 'none';
+			document.getElementById('countRealizar').textContent = programadasSel;
 		}
 
 		function toggleTodos(masterChk) {
@@ -334,12 +360,6 @@
 		function ejecutarBulk(accion) {
 			document.getElementById('accionBulk').value = accion;
 			document.getElementById('formBulk').submit();
-		}
-
-		function confirmarMarcarTodos(idSesion, numSesion) {
-			if (!confirm('¿Marcar la sesión #' + numSesion + ' como REALIZADA y registrar asistencia de todos los alumnos inscritos?\n\nEsta acción es útil para pruebas rápidas.')) return;
-			document.getElementById('marcarTodosIdSesion').value = idSesion;
-			document.getElementById('formMarcarTodos').submit();
 		}
 	</script>
 </body>

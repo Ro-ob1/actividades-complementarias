@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html xmlns:th="https://www.thymeleaf.org">
+
+<head>
+	<meta charset="UTF-8">
+	<title>Informe Semestral — Actividades Complementarias</title>
+	<link href="/webjars/bootstrap/css/bootstrap.min.css" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+	<link rel="stylesheet" th:href="@{/css/estilos.css}">
+	<style>
+		.metric-card {
+			background: #fff;
+			border: 1px solid #d6dce8;
+			border-radius: 10px;
+			padding: 1rem;
+		}
+		.metric-label {
+			font-size: 11px;
+			color: var(--tecnm-gris);
+			margin-bottom: 4px;
+			text-transform: uppercase;
+			letter-spacing: .4px;
+		}
+		.metric-value {
+			font-size: 26px;
+			font-weight: 700;
+			color: var(--tecnm-azul);
+		}
+		@media print {
+			.no-print { display: none !important; }
+			.card { break-inside: avoid; }
+		}
+	</style>
+</head>
+
+<body class="d-flex flex-column min-vh-100">
+	<header th:replace="~{fragmento/fragmento :: main-header}"></header>
+	<main class="container-fluid flex-grow-1 my-4 px-4">
+
+		<!-- Título + selector -->
+		<div class="d-flex align-items-center justify-content-between flex-wrap gap-2 mb-4 no-print">
+			<h5 class="mb-0">
+				<i class="fas fa-chart-bar me-2" style="color:var(--tecnm-azul);"></i>
+				Informe Semestral de Actividades Complementarias
+			</h5>
+			<form method="get" action="/informe" class="d-flex align-items-center gap-2">
+				<select name="idSemestre" class="form-select form-select-sm" style="width:220px;"
+					onchange="this.form.submit()">
+					<option value="">— Selecciona semestre —</option>
+					<option th:each="s : ${semestres}"
+						th:value="${s.id}"
+						th:text="${s.nombre}"
+						th:selected="${idSemestre != null and s.id == idSemestre}">
+					</option>
+				</select>
+			</form>
+		</div>
+
+		<!-- Sin datos -->
+		<div th:if="${semestre == null}" class="alert alert-info">
+			<i class="fas fa-info-circle me-2"></i>
+			Selecciona un semestre para generar el informe.
+		</div>
+
+		<!-- Contenido del informe -->
+		<div th:if="${semestre != null}">
+
+			<!-- Encabezado del informe -->
+			<div class="mb-4">
+				<h6 class="mb-0" style="color:var(--tecnm-gris);">
+					Semestre: <strong th:text="${semestre.nombre}"></strong>
+				</h6>
+			</div>
+
+			<!-- Métricas resumen -->
+			<div class="row g-3 mb-4">
+				<div class="col-6 col-md-2">
+					<div class="metric-card shadow-sm text-center">
+						<div class="metric-label">Total solicitudes</div>
+						<div class="metric-value" th:text="${totalInscripciones}">0</div>
+					</div>
+				</div>
+				<div class="col-6 col-md-2">
+					<div class="metric-card shadow-sm text-center">
+						<div class="metric-label">Aprobadas</div>
+						<div class="metric-value" style="color:#22B14C;" th:text="${aprobadas}">0</div>
+					</div>
+				</div>
+				<div class="col-6 col-md-2">
+					<div class="metric-card shadow-sm text-center">
+						<div class="metric-label">Rechazadas</div>
+						<div class="metric-value" style="color:#dc3545;" th:text="${rechazadas}">0</div>
+					</div>
+				</div>
+				<div class="col-6 col-md-2">
+					<div class="metric-card shadow-sm text-center">
+						<div class="metric-label">Pendientes</div>
+						<div class="metric-value" style="color:#856404;" th:text="${pendientes}">0</div>
+					</div>
+				</div>
+				<div class="col-6 col-md-2">
+					<div class="metric-card shadow-sm text-center">
+						<div class="metric-label">Constancias</div>
+						<div class="metric-value" th:text="${constanciasEmitidas}">0</div>
+					</div>
+				</div>
+				<div class="col-6 col-md-2">
+					<div class="metric-card shadow-sm text-center">
+						<div class="metric-label">Créditos entregados</div>
+						<div class="metric-value" th:text="${totalCreditos}">0</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Gráficas -->
+			<div class="row g-3 mb-4">
+				<div class="col-md-5">
+					<div class="card shadow-sm">
+						<div class="card-header-custom">
+							<i class="fas fa-circle-half-stroke me-2"></i>Estado de solicitudes
+						</div>
+						<div class="card-body d-flex justify-content-center" style="max-height:280px;">
+							<canvas id="pieChart" style="max-height:260px;"></canvas>
+						</div>
+					</div>
+				</div>
+				<div class="col-md-7">
+					<div class="card shadow-sm">
+						<div class="card-header-custom">
+							<i class="fas fa-bar-chart me-2"></i>Inscritos por actividad
+						</div>
+						<div class="card-body" style="max-height:280px;">
+							<canvas id="barChart" style="max-height:260px;"></canvas>
+						</div>
+					</div>
+				</div>
+			</div>
+
+			<!-- Tabla de participantes -->
+			<div class="card shadow-sm">
+				<div class="card-header-custom d-flex align-items-center justify-content-between">
+					<span><i class="fas fa-users me-2"></i>Lista de participantes por actividad</span>
+					<span class="badge text-bg-secondary" th:text="${totalInscripciones} + ' registros'"></span>
+				</div>
+				<div class="card-body p-0">
+					<div th:if="${filas == null or filas.isEmpty()}" class="text-center py-4"
+						style="color:var(--tecnm-gris);">
+						<i class="fas fa-inbox fa-2x mb-2"></i>
+						<p>No hay inscripciones para este semestre.</p>
+					</div>
+					<div class="table-responsive" th:unless="${filas == null or filas.isEmpty()}">
+						<table class="table table-bordered table-hover table-sm mb-0">
+							<thead>
+								<tr>
+									<th>Actividad</th>
+									<th>Alumno</th>
+									<th>N° Control</th>
+									<th>Carrera</th>
+									<th class="text-center">Estatus</th>
+									<th class="text-center">Evaluación</th>
+									<th class="text-center">Nivel</th>
+									<th class="text-center">Créditos</th>
+								</tr>
+							</thead>
+							<tbody>
+								<th:block th:each="row, i : ${filas}">
+									<!-- Group header when activity changes -->
+									<tr th:if="${i.first or !row['actividadNombre'].equals(filas[i.index - 1]['actividadNombre'])}"
+										class="table-primary">
+										<td colspan="8" class="fw-semibold py-2"
+											th:text="${row['actividadNombre']}"></td>
+									</tr>
+									<tr>
+										<td class="text-muted small" th:text="${row['actividadNombre']}"></td>
+										<td th:text="${row['alumnoNombre']}"></td>
+										<td th:text="${row['numControl']}"></td>
+										<td th:text="${row['carrera']}"></td>
+										<td class="text-center">
+											<span th:if="${row['estatus'] == 'APROBADA'}"
+												class="badge text-bg-success">Aprobada</span>
+											<span th:if="${row['estatus'] == 'RECHAZADA'}"
+												class="badge text-bg-danger">Rechazada</span>
+											<span th:if="${row['estatus'] == 'PENDIENTE'}"
+												class="badge text-bg-warning">Pendiente</span>
+										</td>
+										<td class="text-center"
+											th:text="${row['valorNumerico'] != null ? row['valorNumerico'] : '—'}"></td>
+										<td class="text-center"
+											th:text="${row['nivel'] != null ? row['nivel'] : '—'}"></td>
+										<td class="text-center"
+											th:text="${row['creditos'] != null ? row['creditos'] : '—'}"></td>
+									</tr>
+								</th:block>
+							</tbody>
+						</table>
+					</div>
+				</div>
+			</div>
+
+		</div>
+	</main>
+
+	<footer th:replace="~{fragmento/fragmento :: footer}"></footer>
+	<script src="/webjars/bootstrap/js/bootstrap.bundle.min.js"></script>
+	<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+	<script th:if="${semestre != null}" th:inline="javascript">
+		const aprobadas  = /*[[${aprobadas}]]*/  0;
+		const rechazadas = /*[[${rechazadas}]]*/ 0;
+		const pendientes = /*[[${pendientes}]]*/ 0;
+		const actLabels  = /*[[${actLabels}]]*/  [];
+		const actCounts  = /*[[${actCounts}]]*/  [];
+
+		// Pie chart — status distribution
+		new Chart(document.getElementById('pieChart'), {
+			type: 'doughnut',
+			data: {
+				labels: ['Aprobadas', 'Rechazadas', 'Pendientes'],
+				datasets: [{
+					data: [aprobadas, rechazadas, pendientes],
+					backgroundColor: ['#22B14C', '#dc3545', '#ffc107'],
+					borderWidth: 1
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: { legend: { position: 'bottom' } }
+			}
+		});
+
+		// Bar chart — enrollment per activity
+		new Chart(document.getElementById('barChart'), {
+			type: 'bar',
+			data: {
+				labels: actLabels,
+				datasets: [{
+					label: 'Inscritos',
+					data: actCounts,
+					backgroundColor: '#00479D',
+					borderRadius: 4
+				}]
+			},
+			options: {
+				responsive: true,
+				maintainAspectRatio: false,
+				plugins: { legend: { display: false } },
+				scales: {
+					y: { beginAtZero: true, ticks: { stepSize: 1 } }
+				}
+			}
+		});
+	</script>
+</body>
+
+</html>

@@ -3,6 +3,7 @@ package itch.ac.controller;
 import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,6 +17,7 @@ import itch.ac.model.Encargado;
 import itch.ac.model.Inscripcion;
 import itch.ac.model.Persona;
 import itch.ac.service.IActividadService;
+import itch.ac.service.IConstanciaService;
 import itch.ac.service.IEncargadoService;
 import itch.ac.service.IInscripcionService;
 import itch.ac.service.IPersonaService;
@@ -37,6 +39,9 @@ public class EncargadoController {
 	@Autowired
 	private ISemestreService semestreService;
 
+	@Autowired
+	private IConstanciaService constanciaService;
+
 	@GetMapping("/inicio")
 	public String inicio(Model model) {
 
@@ -45,18 +50,27 @@ public class EncargadoController {
 		long totalActividades = actividadService.buscarTodasActividades().size();
 		long totalInscritos = inscripcionService.buscarTodasInscripciones().stream()
 				.filter(i -> "APROBADA".equals(i.getEstatusSolicitud())).count();
+		int totalCreditos = constanciaService.buscarTodasConstancias().stream()
+				.filter(c -> "ENTREGADA".equals(c.getEstatus()))
+				.mapToInt(c -> c.getValorCurricular() != null ? c.getValorCurricular() : 0)
+				.sum();
 
 		model.addAttribute("pendientes", pendientes);
 		model.addAttribute("totalActividades", totalActividades);
 		model.addAttribute("totalInscritos", totalInscritos);
 		model.addAttribute("totalPendientes", pendientes.size());
+		model.addAttribute("totalCreditos", totalCreditos);
 		model.addAttribute("semestre", semestreService.buscarSemestreActivo());
 		return "encargado/dashboard";
 	}
 
 	@GetMapping("/encargados")
-	public String listar(Model model) {
-		List<Encargado> encargados = encargadoService.buscarEncargadosActivos();
+	public String listar(Model model, Authentication auth) {
+		boolean isAdmin = auth.getAuthorities().stream()
+			.anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+		List<Encargado> encargados = isAdmin
+			? encargadoService.buscarTodosEncargados()
+			: encargadoService.buscarEncargadosActivos();
 		model.addAttribute("encargados", encargados);
 		return "encargado/listaEncargados";
 	}

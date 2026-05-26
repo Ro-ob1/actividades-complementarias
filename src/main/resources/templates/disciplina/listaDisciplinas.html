@@ -41,15 +41,15 @@
 							<table class="table table-bordered table-hover mb-0">
 								<thead>
 									<tr>
-										<th>ID</th>
+										<th>#</th>
 										<th>Nombre</th>
 										<th>Créditos</th>
 										<th class="text-center">Operaciones</th>
 									</tr>
 								</thead>
 								<tbody>
-									<tr th:each="disciplina : ${disciplinas}">
-										<td th:text="${disciplina.id}"></td>
+									<tr th:each="disciplina,discStat : ${disciplinas}">
+										<td th:text="${discStat.count}"></td>
 										<td th:text="${disciplina.nombre}"></td>
 										<td th:text="${disciplina.creditos}"></td>
 										<td class="text-center">
@@ -61,7 +61,7 @@
 													class="bi bi-pencil"></i></a>
 											<button class="btn btn-eliminar btn-sm" data-bs-toggle="modal"
 												data-bs-target="#modalEliminar" th:attr="data-id=${disciplina.id},
-													                 data-nombre=${disciplina.nombre}" onclick="prepararEliminar(this)">
+												             data-nombre=${disciplina.nombre}" onclick="prepararEliminar(this)">
 												<i class="bi bi-trash"></i>
 											</button>
 										</td>

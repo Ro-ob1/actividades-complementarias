@@ -61,11 +61,15 @@ public class NivelDesempenioController {
 
 	@GetMapping("/eliminar/{id}")
 	public String eliminar(@PathVariable Integer id, RedirectAttributes attributes) {
-		NivelDesempenio nivel = nivelDesempenioService.eliminarPorId(id);
-		if (nivel == null) {
-			attributes.addFlashAttribute("msg", "No se pudo eliminar el nivel.");
-		} else {
-			attributes.addFlashAttribute("msg", "Nivel eliminado correctamente.");
+		try {
+			NivelDesempenio nivel = nivelDesempenioService.eliminarPorId(id);
+			if (nivel == null) {
+				attributes.addFlashAttribute("msg", "⚠ No se encontró el nivel.");
+			} else {
+				attributes.addFlashAttribute("msg", "Nivel eliminado correctamente.");
+			}
+		} catch (org.springframework.dao.DataIntegrityViolationException e) {
+			attributes.addFlashAttribute("msg", "⚠ No se puede eliminar: hay evaluaciones o constancias que usan este nivel.");
 		}
 		return "redirect:/nivelDesempenio/niveles";
 	}

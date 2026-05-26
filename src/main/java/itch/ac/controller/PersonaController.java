@@ -86,11 +86,15 @@ public class PersonaController {
 
 	@GetMapping("/eliminar/{id}")
 	public String eliminar(@PathVariable Integer id, RedirectAttributes attributes) {
-		Persona persona = personaService.eliminarPorId(id);
-		if (persona == null) {
-			attributes.addFlashAttribute("msg", "No se pudo eliminar la persona.");
-		} else {
-			attributes.addFlashAttribute("msg", "Persona eliminada correctamente.");
+		try {
+			Persona persona = personaService.eliminarPorId(id);
+			if (persona == null) {
+				attributes.addFlashAttribute("msg", "⚠ No se encontró la persona.");
+			} else {
+				attributes.addFlashAttribute("msg", "Persona eliminada correctamente.");
+			}
+		} catch (org.springframework.dao.DataIntegrityViolationException e) {
+			attributes.addFlashAttribute("msg", "⚠ No se puede eliminar: la persona está asociada a un usuario, alumno o instructor.");
 		}
 		return "redirect:/persona/personas";
 	}

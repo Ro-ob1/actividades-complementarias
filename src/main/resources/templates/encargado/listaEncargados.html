@@ -37,7 +37,7 @@
 						<table class="table table-bordered table-hover mb-0">
 							<thead>
 								<tr>
-									<th>ID</th>
+									<th>#</th>
 									<th>Nombre</th>
 									<th>Apellido</th>
 									<th>Email</th>
@@ -46,8 +46,8 @@
 								</tr>
 							</thead>
 							<tbody>
-								<tr th:each="encargado : ${encargados}">
-									<td th:text="${encargado.id}"></td>
+								<tr th:each="encargado,encStat : ${encargados}">
+									<td th:text="${encStat.count}"></td>
 									<td th:text="${encargado.persona.nombre}"></td>
 									<td th:text="${encargado.persona.apellido}"></td>
 									<td th:text="${encargado.persona.email}"></td>

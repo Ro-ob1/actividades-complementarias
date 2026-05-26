@@ -38,15 +38,15 @@
 							<table class="table table-bordered table-hover mb-0">
 								<thead>
 									<tr>
-										<th>ID</th>
+										<th>#</th>
 										<th>Nombre</th>
 										<th>Descripción</th>
 										<th class="text-center">Operaciones</th>
 									</tr>
 								</thead>
 								<tbody>
-									<tr th:each="espacio : ${espacios}">
-										<td th:text="${espacio.id}"></td>
+									<tr th:each="espacio,espacioStat : ${espacios}">
+										<td th:text="${espacioStat.count}"></td>
 										<td th:text="${espacio.nombre}"></td>
 										<td th:text="${espacio.descripcion}"></td>
 										<td class="text-center">

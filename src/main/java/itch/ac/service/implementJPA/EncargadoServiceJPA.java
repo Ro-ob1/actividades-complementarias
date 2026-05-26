@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 
 import itch.ac.model.Encargado;
 import itch.ac.model.Persona;
+import itch.ac.model.Usuario;
 import itch.ac.repository.EncargadoRepository;
+import itch.ac.repository.UsuarioRepository;
 import itch.ac.service.IEncargadoService;
 
 @Primary
@@ -18,6 +20,9 @@ public class EncargadoServiceJPA implements IEncargadoService {
 
 	@Autowired
 	private EncargadoRepository encargadoRepository;
+
+	@Autowired
+	private UsuarioRepository usuarioRepository;
 
 	@Override
 	public List<Encargado> buscarTodosEncargados() {
@@ -50,6 +55,11 @@ public class EncargadoServiceJPA implements IEncargadoService {
 			Encargado encargado = optional.get();
 			encargado.setActivo(0);
 			encargadoRepository.save(encargado);
+			Usuario usuario = usuarioRepository.findByPersona(encargado.getPersona());
+			if (usuario != null && !"ROLE_ADMIN".equals(usuario.getRol())) {
+				usuario.setActivo(0);
+				usuarioRepository.save(usuario);
+			}
 			return encargado;
 		}
 		return null;

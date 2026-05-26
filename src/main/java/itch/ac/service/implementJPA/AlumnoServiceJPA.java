@@ -9,7 +9,9 @@ import org.springframework.stereotype.Service;
 
 import itch.ac.model.Alumno;
 import itch.ac.model.Persona;
+import itch.ac.model.Usuario;
 import itch.ac.repository.AlumnoRepository;
+import itch.ac.repository.UsuarioRepository;
 import itch.ac.service.IAlumnoService;
 
 @Primary
@@ -18,6 +20,9 @@ public class AlumnoServiceJPA implements IAlumnoService {
 
 	@Autowired
 	private AlumnoRepository alumnoRepository;
+
+	@Autowired
+	private UsuarioRepository usuarioRepository;
 
 	@Override
 	public List<Alumno> buscarTodosAlumnos() {
@@ -55,6 +60,11 @@ public class AlumnoServiceJPA implements IAlumnoService {
 			Alumno alumno = optional.get();
 			alumno.setActivo(0);
 			alumnoRepository.save(alumno);
+			Usuario usuario = usuarioRepository.findByPersona(alumno.getPersona());
+			if (usuario != null && !"ROLE_ADMIN".equals(usuario.getRol())) {
+				usuario.setActivo(0);
+				usuarioRepository.save(usuario);
+			}
 			return alumno;
 		}
 		return null;

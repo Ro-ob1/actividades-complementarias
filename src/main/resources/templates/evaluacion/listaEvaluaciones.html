@@ -84,7 +84,7 @@
 							<table class="table table-bordered table-hover mb-0">
 								<thead>
 									<tr>
-										<th>ID</th>
+										<th>#</th>
 										<th>Alumno</th>
 										<th>Actividad</th>
 										<th>Instructor</th>
@@ -98,8 +98,8 @@
 									<tr th:if="${#lists.isEmpty(evaluaciones)}">
 										<td colspan="8" class="text-center text-muted py-3">No se encontraron evaluaciones.</td>
 									</tr>
-									<tr th:each="evaluacion : ${evaluaciones}">
-										<td th:text="${evaluacion.id}"></td>
+									<tr th:each="evaluacion,evalStat : ${evaluaciones}">
+										<td th:text="${evalStat.count}"></td>
 										<td th:text="${evaluacion.inscripcion.alumno.persona.nombre + ' ' + evaluacion.inscripcion.alumno.persona.apellido}"></td>
 										<td th:text="${evaluacion.inscripcion.actividad.nombre}"></td>
 										<td th:text="${evaluacion.instructor.persona.nombre + ' ' + evaluacion.instructor.persona.apellido}"></td>

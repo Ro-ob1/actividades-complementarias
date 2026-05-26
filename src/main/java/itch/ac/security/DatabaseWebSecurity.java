@@ -46,7 +46,12 @@ public class DatabaseWebSecurity {
 			.requestMatchers("/instructor/inicio")
 				.hasAnyRole("ADMIN", "INSTRUCTOR")
 
-			// ── Gestión de instructores: solo ADMIN ───────────────────────────
+			// ── Lista, detalle y alta de instructores: ADMIN y ENCARGADO ────
+			.requestMatchers("/instructor/instructores", "/instructor/ver/**",
+				"/instructor/nuevo", "/instructor/guardar")
+				.hasAnyRole("ADMIN", "ENCARGADO")
+
+			// ── Editar y eliminar instructores: solo ADMIN ────────────────────
 			.requestMatchers("/instructor/**")
 				.hasRole("ADMIN")
 
@@ -70,7 +75,11 @@ public class DatabaseWebSecurity {
 			.requestMatchers("/actividad/**")
 				.hasAnyRole("ADMIN", "ENCARGADO")
 
-			// ── Horarios: ADMIN y ENCARGADO ───────────────────────────────────
+			// ── Horarios: INSTRUCTOR solo puede ver su propio horario y PDF ──
+			.requestMatchers("/horario/horarios", "/horario/instructor/**")
+				.hasAnyRole("ADMIN", "ENCARGADO", "INSTRUCTOR")
+
+			// ── Resto de horarios (CRUD): solo ADMIN y ENCARGADO ─────────────
 			.requestMatchers("/horario/**")
 				.hasAnyRole("ADMIN", "ENCARGADO")
 
@@ -83,10 +92,9 @@ public class DatabaseWebSecurity {
 				.hasRole("ADMIN")
 
 			// ── Sesiones: INSTRUCTOR y ENCARGADO registran asistencia ─────────
-			// (bulkAccion y demás quedan bloqueados para INSTRUCTOR)
 			.requestMatchers("/sesion/sesiones", "/sesion/reporte/**",
 				"/sesion/asistencia/**", "/sesion/guardarAsistencia",
-				"/sesion/marcarTodosAsistieron")
+				"/sesion/marcarTodosAsistieron", "/sesion/bulkAccion")
 				.hasAnyRole("ADMIN", "ENCARGADO", "INSTRUCTOR")
 			.requestMatchers("/sesion/**")
 				.hasAnyRole("ADMIN", "ENCARGADO")
@@ -109,6 +117,10 @@ public class DatabaseWebSecurity {
 				.hasRole("ADMIN")
 			.requestMatchers("/criterioEval/**")
 				.hasAnyRole("ADMIN", "INSTRUCTOR")
+
+			// ── Informe semestral: ADMIN y ENCARGADO ─────────────────────────
+			.requestMatchers("/informe/**")
+				.hasAnyRole("ADMIN", "ENCARGADO")
 
 			// ── Constancias ───────────────────────────────────────────────────
 			// ALUMNO e INSTRUCTOR: solo ver lista, detalle y descargar PDF

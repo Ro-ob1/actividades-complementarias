@@ -47,7 +47,7 @@
 							<table class="table table-bordered table-hover mb-0">
 								<thead>
 									<tr>
-										<th>ID</th>
+										<th>#</th>
 										<th>Nombre</th>
 										<th>Rango mínimo</th>
 										<th>Rango máximo</th>
@@ -55,8 +55,8 @@
 									</tr>
 								</thead>
 								<tbody>
-									<tr th:each="nivel : ${niveles}">
-										<td th:text="${nivel.id}"></td>
+									<tr th:each="nivel,nivelStat : ${niveles}">
+										<td th:text="${nivelStat.count}"></td>
 										<td th:text="${nivel.nombre}"></td>
 										<td th:text="${nivel.rangoMin}"></td>
 										<td th:text="${nivel.rangoMax}"></td>

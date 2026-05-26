@@ -1,5 +1,6 @@
 <!DOCTYPE html>
-<html xmlns:th="https://www.thymeleaf.org">
+<html xmlns:th="https://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
 
 <head>
 	<meta charset="UTF-8">
@@ -30,8 +31,9 @@
 				<div class="card shadow-sm">
 					<div class="card-header-custom d-flex align-items-center justify-content-between">
 						<span><i class="fas fa-chalkboard-teacher me-2"></i>Instructores</span>
-						<a th:href="@{/instructor/nuevo}" class="btn btn-light btn-sm"><i class="fas fa-plus me-1"></i>
-							Nuevo</a>
+						<a sec:authorize="hasAnyRole('ROLE_ADMIN','ROLE_ENCARGADO')"
+						   th:href="@{/instructor/nuevo}" class="btn btn-light btn-sm">
+							<i class="fas fa-plus me-1"></i> Nuevo</a>
 					</div>
 					<div class="card-body">
 						<form th:action="@{/instructor/instructores}" method="get" class="d-flex gap-2 mb-3 search-bar">
@@ -44,7 +46,7 @@
 							<table class="table table-bordered table-hover mb-0">
 								<thead>
 									<tr>
-										<th>ID</th>
+										<th>#</th>
 										<th>Foto</th>
 										<th>Nombre</th>
 										<th>Apellido</th>
@@ -54,8 +56,8 @@
 									</tr>
 								</thead>
 								<tbody>
-									<tr th:each="instructor : ${instructores}">
-										<td th:text="${instructor.id}"></td>
+									<tr th:each="instructor,instrStat : ${instructores}">
+										<td th:text="${instrStat.count}"></td>
 										<td class="text-center">
 											<img th:src="@{/images/instructor/{img}(img=${instructor.foto})}"
 												class="img-actividad" onerror="this.src='/images/no-image.jpg'">
@@ -73,10 +75,12 @@
 											<a class="btn btn-ver btn-sm"
 												th:href="@{/instructor/ver/{id}(id=${instructor.id})}"><i
 													class="bi bi-eye"></i></a>
-											<a class="btn btn-editar btn-sm"
+											<a sec:authorize="hasRole('ROLE_ADMIN')"
+											   class="btn btn-editar btn-sm"
 												th:href="@{/instructor/editar/{id}(id=${instructor.id})}"><i
 													class="bi bi-pencil"></i></a>
-											<button class="btn btn-eliminar btn-sm" data-bs-toggle="modal"
+											<button sec:authorize="hasRole('ROLE_ADMIN')"
+											        class="btn btn-eliminar btn-sm" data-bs-toggle="modal"
 												data-bs-target="#modalEliminar" th:attr="data-id=${instructor.id},
 													                 data-nombre=${instructor.persona.nombre
 													                               + ' ' + instructor.persona.apellido}" onclick="prepararEliminar(this)">

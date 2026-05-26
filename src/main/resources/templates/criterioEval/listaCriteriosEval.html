@@ -39,7 +39,7 @@
 							<table class="table table-bordered table-hover mb-0">
 								<thead>
 									<tr>
-										<th>ID</th>
+										<th>#</th>
 										<th>Evaluación</th>
 										<th>Criterio</th>
 										<th class="text-center">Valor</th>
@@ -51,8 +51,8 @@
 									<tr th:if="${#lists.isEmpty(criterios)}">
 										<td colspan="6" class="text-center text-muted py-3">No se encontraron criterios evaluados.</td>
 									</tr>
-									<tr th:each="criterio : ${criterios}">
-										<td th:text="${criterio.id}"></td>
+									<tr th:each="criterio,criterioStat : ${criterios}">
+										<td th:text="${criterioStat.count}"></td>
 										<td th:text="${criterio.evaluacion.inscripcion.alumno.persona.nombre + ' — ' + criterio.evaluacion.inscripcion.actividad.nombre}"></td>
 										<td th:text="${criterio.criterio.nombre}"></td>
 										<td class="text-center" th:text="${criterio.valor}"></td>

@@ -38,7 +38,7 @@
 							<table class="table table-bordered table-hover mb-0">
 								<thead>
 									<tr>
-										<th>ID</th>
+										<th>#</th>
 										<th>Username</th>
 										<th>Nombre</th>
 										<th>Rol</th>
@@ -47,8 +47,8 @@
 									</tr>
 								</thead>
 								<tbody>
-									<tr th:each="usuario : ${usuarios}">
-										<td th:text="${usuario.id}"></td>
+									<tr th:each="usuario,usuarioStat : ${usuarios}">
+										<td th:text="${usuarioStat.count}"></td>
 										<td th:text="${usuario.username}"></td>
 										<td th:text="${usuario.persona.nombre + ' ' + usuario.persona.apellido}"></td>
 										<td>

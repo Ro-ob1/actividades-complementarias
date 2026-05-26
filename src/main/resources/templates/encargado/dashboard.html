@@ -50,22 +50,28 @@
 
 		<!-- Métricas -->
 		<div class="row g-3 mb-4">
-			<div class="col-md-4">
+			<div class="col-md-3">
 				<div class="metric-card shadow-sm">
 					<div class="metric-label">Actividades registradas</div>
 					<div class="metric-value" th:text="${totalActividades}">0</div>
 				</div>
 			</div>
-			<div class="col-md-4">
+			<div class="col-md-3">
 				<div class="metric-card shadow-sm">
 					<div class="metric-label">Alumnos inscritos</div>
 					<div class="metric-value" th:text="${totalInscritos}">0</div>
 				</div>
 			</div>
-			<div class="col-md-4">
+			<div class="col-md-3">
 				<div class="metric-card shadow-sm">
 					<div class="metric-label">Solicitudes pendientes</div>
 					<div class="metric-value metric-warn" th:text="${totalPendientes}">0</div>
+				</div>
+			</div>
+			<div class="col-md-3">
+				<div class="metric-card shadow-sm">
+					<div class="metric-label">Créditos entregados</div>
+					<div class="metric-value" th:text="${totalCreditos}">0</div>
 				</div>
 			</div>
 		</div>
@@ -107,12 +113,14 @@
 										style="font-size:12px;color:var(--tecnm-gris);">—</span>
 								</td>
 								<td class="text-center">
-									<a th:href="@{/inscripcion/aprobar/{id}(id=${ins.id})}" class="btn btn-sm btn-ver"
-										onclick="return confirm('¿Aprobar esta inscripción?')" style="font-size:11px;">
+									<button class="btn btn-sm btn-ver" style="font-size:11px;"
+										data-bs-toggle="modal" data-bs-target="#modalAceptar"
+										th:attr="data-id=${ins.id},data-nombre=${ins.alumno.persona.nombre + ' ' + ins.alumno.persona.apellido},data-actividad=${ins.actividad.nombre}">
 										<i class="bi bi-check-lg"></i> Aceptar
-									</a>
+									</button>
 									<button class="btn btn-sm btn-eliminar" style="font-size:11px;"
-										data-bs-toggle="modal" th:attr="data-id=${ins.id}">
+										data-bs-toggle="modal" data-bs-target="#modalRechazar"
+										th:attr="data-id=${ins.id}">
 										<i class="bi bi-x-lg"></i> Rechazar
 									</button>
 								</td>
@@ -125,16 +133,41 @@
 				<a th:href="@{/actividad/nuevo}" class="btn btn-guardar btn-sm">
 					<i class="fas fa-plus me-1"></i> Registrar actividad
 				</a>
-				<a th:href="@{/instructor/instructores}" class="btn btn-outline-secondary btn-sm">
-					<i class="fas fa-chalkboard-teacher me-1"></i> Asignar instructor
+				<a th:href="@{/actividad/actividades}" class="btn btn-outline-secondary btn-sm">
+					<i class="fas fa-chalkboard-teacher me-1"></i> Asignar instructor a actividad
 				</a>
 				<a th:href="@{/inscripcion/inscripciones}" class="btn btn-outline-secondary btn-sm">
 					<i class="fas fa-list me-1"></i> Ver todas las inscripciones
+				</a>
+				<a th:href="@{/informe}" class="btn btn-outline-secondary btn-sm">
+					<i class="fas fa-chart-bar me-1"></i> Informe semestral
 				</a>
 			</div>
 		</div>
 
 	</main>
+
+	<!-- Modal aceptar -->
+	<div class="modal fade" id="modalAceptar" tabindex="-1">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<div class="modal-header">
+					<h5 class="modal-title"><i class="bi bi-check-circle text-success me-2"></i>Aceptar inscripción</h5>
+					<button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+				</div>
+				<div class="modal-body" style="font-size:14px;">
+					¿Aprobar la inscripción de <strong id="nombreAceptar"></strong>
+					en <strong id="actividadAceptar"></strong>?
+				</div>
+				<div class="modal-footer">
+					<button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancelar</button>
+					<a id="linkAceptar" href="#" class="btn btn-ver">
+						<i class="bi bi-check-lg me-1"></i> Sí, aceptar
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
 
 	<!-- Modal rechazar -->
 	<div class="modal fade" id="modalRechazar" tabindex="-1">
@@ -160,11 +193,16 @@
 		</div>
 	</div>
 	<script>
-		document.querySelectorAll('[data-bs-toggle="modal"]').forEach(btn => {
+		document.querySelectorAll('[data-bs-target="#modalAceptar"]').forEach(btn => {
 			btn.addEventListener('click', () => {
-				const id = btn.getAttribute('data-id');
-				document.getElementById('formRechazar').action = '/inscripcion/rechazar/' + id;
-				new bootstrap.Modal(document.getElementById('modalRechazar')).show();
+				document.getElementById('nombreAceptar').textContent = btn.getAttribute('data-nombre');
+				document.getElementById('actividadAceptar').textContent = btn.getAttribute('data-actividad');
+				document.getElementById('linkAceptar').href = '/inscripcion/aprobar/' + btn.getAttribute('data-id');
+			});
+		});
+		document.querySelectorAll('[data-bs-target="#modalRechazar"]').forEach(btn => {
+			btn.addEventListener('click', () => {
+				document.getElementById('formRechazar').action = '/inscripcion/rechazar/' + btn.getAttribute('data-id');
 			});
 		});
 	</script>

@@ -61,11 +61,15 @@ public class DisciplinaController {
 
 	@GetMapping("/eliminar/{id}")
 	public String eliminar(@PathVariable Integer id, RedirectAttributes attributes) {
-		Disciplina disciplina = disciplinaService.eliminarPorId(id);
-		if (disciplina == null) {
-			attributes.addFlashAttribute("msg", "No se pudo eliminar la disciplina.");
-		} else {
-			attributes.addFlashAttribute("msg", "Disciplina eliminada correctamente.");
+		try {
+			Disciplina disciplina = disciplinaService.eliminarPorId(id);
+			if (disciplina == null) {
+				attributes.addFlashAttribute("msg", "⚠ No se encontró la disciplina.");
+			} else {
+				attributes.addFlashAttribute("msg", "Disciplina eliminada correctamente.");
+			}
+		} catch (org.springframework.dao.DataIntegrityViolationException e) {
+			attributes.addFlashAttribute("msg", "⚠ No se puede eliminar: hay actividades asociadas a esta disciplina.");
 		}
 		return "redirect:/disciplina/disciplinas";
 	}

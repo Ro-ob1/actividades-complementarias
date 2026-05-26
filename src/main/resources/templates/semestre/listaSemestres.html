@@ -38,7 +38,7 @@
 							<table class="table table-bordered table-hover mb-0">
 								<thead>
 									<tr>
-										<th>ID</th>
+										<th>#</th>
 										<th>Nombre</th>
 										<th>Fecha inicio</th>
 										<th>Fecha fin</th>
@@ -47,8 +47,8 @@
 									</tr>
 								</thead>
 								<tbody>
-									<tr th:each="semestre : ${semestres}">
-										<td th:text="${semestre.id}"></td>
+									<tr th:each="semestre,semestreStat : ${semestres}">
+										<td th:text="${semestreStat.count}"></td>
 										<td th:text="${semestre.nombre}"></td>
 										<td th:text="${semestre.fechaInicio}"></td>
 										<td th:text="${semestre.fechaFin}"></td>
